@@ -8,28 +8,39 @@
 </head>
 <body>
   <div id="login-screen" class="login-screen">
-    <div class="login-intro">
-      <div class="brand-mark">SI</div>
-      <p class="eyebrow">University internship platform</p>
-      <h1>Find work that fits your story.</h1>
-      <p>SmartIntern connects students and companies through clear, database-powered matching rules.</p>
-      <div class="intro-points"><span>Profile evidence</span><span>Transparent matches</span><span>Simple applications</span></div>
-    </div>
+    <header class="login-header"><div class="wordmark">Smart<span>Intern</span></div><a href="#" class="back-home">← Back to home</a></header>
+    <section class="login-intro">
+      <div class="intro-badge"><span>+</span> INTERNSHIP MATCHING</div>
+      <h1>Your next opportunity<br>starts here.</h1>
+      <p>Connect your skills, resume, and career goals with the right internship opportunities.</p>
+      <article class="preview-card">
+        <div class="preview-top"><div><strong>Software Developer Intern</strong><small>TechNova Systems</small></div><span class="match-badge">85% Match</span></div>
+        <div class="preview-tags"><span>OK Java</span><span>OK SQL</span><span>OK Python</span><span class="tag-missing">X React</span></div>
+        <div class="preview-bottom"><span>GPA: 3.5 / 3.0 req.</span><strong>Meets requirement</strong></div>
+      </article>
+      <div class="intro-proof"><span class="proof-avatars"><i>CS</i><i>AI</i><i>ENG</i></span><span class="stars">5.0 rating</span><p>Transparent matching for students and verified company opportunities.</p></div>
+    </section>
     <form id="login-form" class="login-card">
-      <p class="eyebrow">Welcome back</p>
-      <h2>Sign in to SmartIntern</h2>
-      <p class="muted login-copy">Choose your account type, then use your project credentials.</p>
+      <h2>Welcome back</h2>
+      <p class="muted login-copy">Log in to continue to SmartIntern</p>
+      <p class="field-caption">I am signing in as</p>
       <div class="role-choice" role="group" aria-label="Account type">
-        <button type="button" class="role-button active" data-role="Student">Student</button>
-        <button type="button" class="role-button" data-role="Company">Company</button>
+        <button type="button" class="role-button active" data-role="Student"><span>S</span> Student</button>
+        <button type="button" class="role-button" data-role="Company"><span>C</span> Company</button>
       </div>
       <input type="hidden" id="login-role" value="Student">
-      <label>Email<input id="login-email" type="email" required placeholder="alice@example.com"></label>
-      <label>Password<input id="login-password" type="password" required placeholder="Your password"></label>
-      <button class="primary-button wide" type="submit">Sign in</button>
+      <label>Email<input id="login-email" type="email" required placeholder="Enter your email"></label>
+      <label>Password<div class="password-field"><input id="login-password" type="password" required placeholder="Enter your password"><button type="button" id="toggle-password" aria-label="Show password">◉</button></div></label>
+      <div class="login-options"><label class="remember"><input type="checkbox"> Remember me</label><a href="#">Forgot password?</a></div>
+      <button class="primary-button wide" type="submit">Log in <span>→</span></button>
       <div id="login-error" class="form-error hidden"></div>
-      <div class="demo-hint">Local demo: student accounts use <strong>student123</strong>; company accounts use <strong>company123</strong>.</div>
+      <div class="login-divider"><span>OR</span></div>
+      <button class="google-button" type="button" disabled><strong>G</strong> Continue with Google</button>
+      <p class="signup-prompt">Don't have an account? <a href="#">Create an account</a></p>
+      <p class="secure-note">Your information is securely protected.</p>
+      <div class="demo-hint">Demo: Student <strong>student123</strong> · Company <strong>company123</strong></div>
     </form>
+    <footer class="login-footer">© 2026 SmartIntern. All rights reserved.</footer>
   </div>
 
   <div id="app-shell" class="app-shell hidden">
