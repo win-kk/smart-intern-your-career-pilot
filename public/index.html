@@ -7,8 +7,9 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+  <a class="skip-link" href="#login-form">Skip to sign in</a>
   <div id="login-screen" class="login-screen">
-    <header class="login-header"><div class="wordmark">Smart<span>Intern</span></div><a href="#" class="back-home">← Back to home</a></header>
+    <header class="login-header"><div class="wordmark">Smart<span>Intern</span></div></header>
     <section class="login-intro">
       <div class="intro-badge"><span>+</span> INTERNSHIP MATCHING</div>
       <h1>Your next opportunity<br>starts here.</h1>
@@ -25,20 +26,17 @@
       <p class="muted login-copy">Log in to continue to SmartIntern</p>
       <p class="field-caption">I am signing in as</p>
       <div class="role-choice" role="group" aria-label="Account type">
-        <button type="button" class="role-button active" data-role="Student"><span>S</span> Student</button>
-        <button type="button" class="role-button" data-role="Company"><span>C</span> Company</button>
+        <button type="button" class="role-button active" data-role="Student" aria-pressed="true">Student</button>
+        <button type="button" class="role-button" data-role="Company" aria-pressed="false">Company</button>
       </div>
       <input type="hidden" id="login-role" value="Student">
-      <label>Email<input id="login-email" type="email" required placeholder="Enter your email"></label>
-      <label>Password<div class="password-field"><input id="login-password" type="password" required placeholder="Enter your password"><button type="button" id="toggle-password" aria-label="Show password">◉</button></div></label>
-      <div class="login-options"><label class="remember"><input type="checkbox"> Remember me</label><a href="#">Forgot password?</a></div>
-      <button class="primary-button wide" type="submit">Log in <span>→</span></button>
-      <div id="login-error" class="form-error hidden"></div>
-      <div class="login-divider"><span>OR</span></div>
-      <button class="google-button" type="button" disabled><strong>G</strong> Continue with Google</button>
-      <p class="signup-prompt">Don't have an account? <a href="#">Create an account</a></p>
+      <label for="login-email">Email<input id="login-email" type="email" autocomplete="username" required placeholder="Enter your email"></label>
+      <label for="login-password">Password<div class="password-field"><input id="login-password" type="password" autocomplete="current-password" required placeholder="Enter your password"><button type="button" id="toggle-password" aria-label="Show password">Show</button></div></label>
+      <div class="login-options"><label class="remember"><input type="checkbox" id="remember-login"> Remember me</label></div>
+      <button class="primary-button wide" id="login-submit" type="submit">Log in</button>
+      <div id="login-error" class="form-error hidden" role="alert" tabindex="-1"></div>
       <p class="secure-note">Your information is securely protected.</p>
-      <div class="demo-hint">Demo: Student <strong>student123</strong> · Company <strong>company123</strong></div>
+      <div class="demo-hint">Demo credentials are listed in the project README.</div>
     </form>
     <footer class="login-footer">© 2026 SmartIntern. All rights reserved.</footer>
   </div>
