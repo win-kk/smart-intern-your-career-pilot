@@ -251,7 +251,7 @@ app.get('/api/student/profile', studentOnly, async (req, res, next) => {
       WHERE ss.student_id = ? ORDER BY sk.skill_name
     `, [studentId]);
     const [projects] = await pool.query(`
-      SELECT sp.project_id, p.project_name, p.description, p.technologies, sp.project_role
+      SELECT sp.project_id, p.project_code, p.project_name, p.description, p.technologies, sp.project_role
       FROM student_projects AS sp JOIN projects AS p ON p.project_id = sp.project_id
       WHERE sp.student_id = ? ORDER BY p.project_name
     `, [studentId]);
@@ -314,19 +314,30 @@ app.post('/api/student/applications', studentOnly, async (req, res, next) => {
 });
 
 app.post('/api/student/skills', studentOnly, async (req, res, next) => {
+  const connection = await pool.getConnection();
   try {
-    const skillId = idParam(req.body.skillId, 'skillId');
+    const skillId = req.body.skillId ? idParam(req.body.skillId, 'skillId') : null;
+    const skillName = optionalText(req.body.skillName);
+    const category = optionalText(req.body.category);
     const proficiency = numberValue(req.body.proficiencyLevel, 'Proficiency level', 1, 5);
     const years = numberValue(req.body.yearsExperience, 'Years of experience', 0, 99);
     const lastUsedYear = req.body.lastUsedYear ? Number(req.body.lastUsedYear) : null;
-    await pool.query(`
+    if (!skillId && !skillName) return res.status(400).json({ error: 'Enter a skill name' });
+    await connection.beginTransaction();
+    let resolvedSkillId = skillId;
+    if (!resolvedSkillId) {
+      const [skill] = await connection.query('INSERT INTO skills (skill_name, category) VALUES (?, ?) ON DUPLICATE KEY UPDATE skill_id = LAST_INSERT_ID(skill_id), category = COALESCE(VALUES(category), category)', [skillName, category]);
+      resolvedSkillId = skill.insertId;
+    }
+    await connection.query(`
       INSERT INTO student_skills (student_id, skill_id, proficiency_level, years_experience, last_used_year)
       VALUES (?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE proficiency_level = VALUES(proficiency_level),
         years_experience = VALUES(years_experience), last_used_year = VALUES(last_used_year)
-    `, [req.session.user.profileId, skillId, proficiency, years, lastUsedYear]);
+    `, [req.session.user.profileId, resolvedSkillId, proficiency, years, lastUsedYear]);
+    await connection.commit();
     res.status(201).json({ ok: true });
-  } catch (error) { next(error); }
+  } catch (error) { await connection.rollback(); next(error); } finally { connection.release(); }
 });
 
 app.delete('/api/student/skills/:skillId', studentOnly, async (req, res, next) => {
@@ -369,11 +380,27 @@ app.post('/api/student/projects', studentOnly, async (req, res, next) => {
     const projectName = requiredText(req.body.projectName, 'Project name');
     const projectRole = requiredText(req.body.projectRole, 'Project role');
     await connection.beginTransaction();
-    const [project] = await connection.query('INSERT INTO projects (project_name, description, technologies) VALUES (?, ?, ?)', [projectName, optionalText(req.body.description), optionalText(req.body.technologies)]);
+    const [project] = await connection.query('INSERT INTO projects (project_code, project_name, description, technologies) VALUES (?, ?, ?, ?)', ['PENDING', projectName, optionalText(req.body.description), optionalText(req.body.technologies)]);
+    const projectCode = `PRJ-${String(project.insertId).padStart(4, '0')}`;
+    await connection.query('UPDATE projects SET project_code = ? WHERE project_id = ?', [projectCode, project.insertId]);
     await connection.query('INSERT INTO student_projects (student_id, project_id, project_role) VALUES (?, ?, ?)', [req.session.user.profileId, project.insertId, projectRole]);
     await connection.commit();
-    res.status(201).json({ projectId: project.insertId });
+    res.status(201).json({ projectId: project.insertId, projectCode });
   } catch (error) { await connection.rollback(); next(error); } finally { connection.release(); }
+});
+
+app.post('/api/student/projects/join', studentOnly, async (req, res, next) => {
+  try {
+    const projectCode = requiredText(req.body.projectCode, 'Project code', 30).toUpperCase();
+    const projectRole = requiredText(req.body.projectRole, 'Project role');
+    const [projects] = await pool.query('SELECT project_id FROM projects WHERE project_code = ?', [projectCode]);
+    if (!projects.length) return res.status(404).json({ error: 'Project code was not found' });
+    await pool.query('INSERT INTO student_projects (student_id, project_id, project_role) VALUES (?, ?, ?)', [req.session.user.profileId, projects[0].project_id, projectRole]);
+    res.status(201).json({ projectId: projects[0].project_id });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'You are already connected to this project' });
+    next(error);
+  }
 });
 
 app.delete('/api/student/projects/:projectId', studentOnly, async (req, res, next) => {

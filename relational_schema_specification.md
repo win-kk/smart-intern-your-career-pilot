@@ -53,6 +53,7 @@ Internship publication status is intentionally excluded because it is not necess
 ### projects
 
 - `project_id` - primary key, integer, auto-increment
+- `project_code` - required unique code shared with teammates
 - `project_name` - required
 - `description` - optional
 - `technologies` - optional text

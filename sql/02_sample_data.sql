@@ -29,9 +29,9 @@ INSERT INTO education (education_id, institution, degree) VALUES
 (2, 'Smart University', 'BSc Information Technology'),
 (3, 'City College', 'Diploma in Computing');
 
-INSERT INTO projects (project_id, project_name, description, technologies) VALUES
-(1, 'SmartIntern', 'A rule-based internship matching database project.', 'MySQL, Node.js, HTML, CSS, JavaScript'),
-(2, 'Campus Event Portal', 'A portal for managing university events.', 'MySQL, JavaScript, HTML/CSS');
+INSERT INTO projects (project_id, project_code, project_name, description, technologies) VALUES
+(1, 'PRJ-0001', 'SmartIntern', 'A rule-based internship matching database project.', 'MySQL, Node.js, HTML, CSS, JavaScript'),
+(2, 'PRJ-0002', 'Campus Event Portal', 'A portal for managing university events.', 'MySQL, JavaScript, HTML/CSS');
 
 INSERT INTO certifications (certification_id, certification_name, issuer) VALUES
 (1, 'Database Fundamentals', 'Smart University'),

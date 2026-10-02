@@ -43,6 +43,7 @@ CREATE TABLE education (
 
 CREATE TABLE projects (
     project_id INT AUTO_INCREMENT PRIMARY KEY,
+    project_code VARCHAR(30) NOT NULL UNIQUE,
     project_name VARCHAR(255) NOT NULL,
     description TEXT,
     technologies TEXT
