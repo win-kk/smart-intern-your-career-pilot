@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartIntern</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="login-screen" class="login-screen">
+    <div class="login-intro">
+      <div class="brand-mark">SI</div>
+      <p class="eyebrow">University internship platform</p>
+      <h1>Find work that fits your story.</h1>
+      <p>SmartIntern connects students and companies through clear, database-powered matching rules.</p>
+      <div class="intro-points"><span>Profile evidence</span><span>Transparent matches</span><span>Simple applications</span></div>
+    </div>
+    <form id="login-form" class="login-card">
+      <p class="eyebrow">Welcome back</p>
+      <h2>Sign in to SmartIntern</h2>
+      <p class="muted login-copy">Choose your account type, then use your project credentials.</p>
+      <div class="role-choice" role="group" aria-label="Account type">
+        <button type="button" class="role-button active" data-role="Student">Student</button>
+        <button type="button" class="role-button" data-role="Company">Company</button>
+      </div>
+      <input type="hidden" id="login-role" value="Student">
+      <label>Email<input id="login-email" type="email" required placeholder="alice@example.com"></label>
+      <label>Password<input id="login-password" type="password" required placeholder="Your password"></label>
+      <button class="primary-button wide" type="submit">Sign in</button>
+      <div id="login-error" class="form-error hidden"></div>
+      <div class="demo-hint">Local demo: student accounts use <strong>student123</strong>; company accounts use <strong>company123</strong>.</div>
+    </form>
+  </div>
+
+  <div id="app-shell" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand"><span class="brand-mark small">SI</span><div><strong>SmartIntern</strong><small>Career pilot</small></div></div>
+      <nav id="main-nav" class="main-nav"></nav>
+      <div class="sidebar-bottom"><div id="sidebar-user" class="sidebar-user"></div><button id="logout-button" class="logout-button">Sign out</button></div>
+    </aside>
+    <main class="main-content">
+      <header class="topbar"><div><p id="page-kicker" class="eyebrow">Workspace</p><h1 id="page-title">Overview</h1></div><div id="connection-badge" class="connection-badge">Local database</div></header>
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
