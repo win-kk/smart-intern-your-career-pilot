@@ -50,6 +50,8 @@ Internship publication status is intentionally excluded because it is not necess
 - `institution` - required
 - `degree` - required
 
+Unique constraint: (`institution`, `degree`). Student-specific GPA and study details remain in `student_education`.
+
 ### projects
 
 - `project_id` - primary key, integer, auto-increment
@@ -65,6 +67,8 @@ Projects are reusable records and are connected to students through `student_pro
 - `certification_id` - primary key, integer, auto-increment
 - `certification_name` - required
 - `issuer` - required
+
+Unique constraint: (`certification_name`, `issuer`). Student-specific issue dates remain in `student_certifications`.
 
 ### experience
 

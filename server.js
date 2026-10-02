@@ -7,7 +7,7 @@ const path = require('path');
 const mysql = require('mysql2/promise');
 
 const app = express();
-const port = Number(process.env.PORT || 3000);
+const port = Number(process.env.PORT || 3002);
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || '127.0.0.1',
@@ -350,18 +350,26 @@ app.delete('/api/student/skills/:skillId', studentOnly, async (req, res, next) =
 app.post('/api/student/education', studentOnly, async (req, res, next) => {
   const connection = await pool.getConnection();
   try {
-    const educationId = idParam(req.body.educationId, 'educationId');
+    const educationId = req.body.educationId ? idParam(req.body.educationId, 'educationId') : null;
+    const institution = optionalText(req.body.institution);
+    const degree = optionalText(req.body.degree);
     const gpa = numberValue(req.body.gpa, 'GPA', 0, 4);
     const studyYear = numberValue(req.body.studyYear, 'Study year', 1, 10);
     const graduationYear = req.body.graduationYear ? Number(req.body.graduationYear) : null;
+    if (!educationId && (!institution || !degree)) return res.status(400).json({ error: 'Select an education record or enter an institution and degree' });
     await connection.beginTransaction();
+    let resolvedEducationId = educationId;
+    if (!resolvedEducationId) {
+      const [education] = await connection.query('INSERT INTO education (institution, degree) VALUES (?, ?) ON DUPLICATE KEY UPDATE education_id = LAST_INSERT_ID(education_id)', [institution, degree]);
+      resolvedEducationId = education.insertId;
+    }
     if (req.body.isCurrent) await connection.query('UPDATE student_education SET is_current = FALSE WHERE student_id = ?', [req.session.user.profileId]);
     await connection.query(`
       INSERT INTO student_education (student_id, education_id, gpa, study_year, graduation_year, is_current)
       VALUES (?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE gpa = VALUES(gpa), study_year = VALUES(study_year),
         graduation_year = VALUES(graduation_year), is_current = VALUES(is_current)
-    `, [req.session.user.profileId, educationId, gpa, studyYear, graduationYear, Boolean(req.body.isCurrent)]);
+    `, [req.session.user.profileId, resolvedEducationId, gpa, studyYear, graduationYear, Boolean(req.body.isCurrent)]);
     await connection.commit();
     res.status(201).json({ ok: true });
   } catch (error) { await connection.rollback(); next(error); } finally { connection.release(); }
@@ -412,13 +420,21 @@ app.delete('/api/student/projects/:projectId', studentOnly, async (req, res, nex
 
 app.post('/api/student/certifications', studentOnly, async (req, res, next) => {
   try {
-    const certificationId = idParam(req.body.certificationId, 'certificationId');
+    const certificationId = req.body.certificationId ? idParam(req.body.certificationId, 'certificationId') : null;
+    const certificationName = optionalText(req.body.certificationName);
+    const issuer = optionalText(req.body.issuer);
     const issueDate = requiredText(req.body.issueDate, 'Issue date');
+    if (!certificationId && (!certificationName || !issuer)) return res.status(400).json({ error: 'Select a certification or enter its name and issuer' });
+    let resolvedCertificationId = certificationId;
+    if (!resolvedCertificationId) {
+      const [certification] = await pool.query('INSERT INTO certifications (certification_name, issuer) VALUES (?, ?) ON DUPLICATE KEY UPDATE certification_id = LAST_INSERT_ID(certification_id)', [certificationName, issuer]);
+      resolvedCertificationId = certification.insertId;
+    }
     await pool.query(`
       INSERT INTO student_certifications (student_id, certification_id, issue_date)
       VALUES (?, ?, ?)
       ON DUPLICATE KEY UPDATE issue_date = VALUES(issue_date)
-    `, [req.session.user.profileId, certificationId, issueDate]);
+    `, [req.session.user.profileId, resolvedCertificationId, issueDate]);
     res.status(201).json({ ok: true });
   } catch (error) { next(error); }
 });

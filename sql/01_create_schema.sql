@@ -38,7 +38,8 @@ CREATE TABLE skills (
 CREATE TABLE education (
     education_id INT AUTO_INCREMENT PRIMARY KEY,
     institution VARCHAR(255) NOT NULL,
-    degree VARCHAR(255) NOT NULL
+    degree VARCHAR(255) NOT NULL,
+    UNIQUE KEY uq_education_institution_degree (institution, degree)
 );
 
 CREATE TABLE projects (
@@ -52,7 +53,8 @@ CREATE TABLE projects (
 CREATE TABLE certifications (
     certification_id INT AUTO_INCREMENT PRIMARY KEY,
     certification_name VARCHAR(255) NOT NULL,
-    issuer VARCHAR(255) NOT NULL
+    issuer VARCHAR(255) NOT NULL,
+    UNIQUE KEY uq_certification_name_issuer (certification_name, issuer)
 );
 
 CREATE TABLE experience (
