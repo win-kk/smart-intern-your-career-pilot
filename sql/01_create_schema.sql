@@ -57,7 +57,7 @@ CREATE TABLE certifications (
 CREATE TABLE experience (
     experience_id INT AUTO_INCREMENT PRIMARY KEY,
     organization VARCHAR(255) NOT NULL,
-    position_title VARCHAR(255) NOT NULL
+    UNIQUE KEY uq_experience_organization (organization)
 );
 
 CREATE TABLE internships (
@@ -162,6 +162,7 @@ CREATE TABLE student_certifications (
 CREATE TABLE student_experience (
     student_id INT NOT NULL,
     experience_id INT NOT NULL,
+    position_title VARCHAR(255) NOT NULL,
     role VARCHAR(255) NOT NULL,
     duration_months INT UNSIGNED NOT NULL,
     PRIMARY KEY (student_id, experience_id),

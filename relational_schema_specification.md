@@ -69,9 +69,8 @@ Projects are reusable records and are connected to students through `student_pro
 
 - `experience_id` - primary key, integer, auto-increment
 - `organization` - required
-- `position_title` - required
 
-Experience records are reusable and are connected to students through `student_experience`.
+Organization records are reusable and are connected to students through `student_experience`. A single organization can therefore be connected to many students with different positions and roles.
 
 ## Bridge and transaction tables
 
@@ -130,6 +129,7 @@ Composite primary key: (`student_id`, `certification_id`)
 
 - `student_id` - part of composite primary key; foreign key to `students.student_id`
 - `experience_id` - part of composite primary key; foreign key to `experience.experience_id`
+- `position_title` - required; the student's position at the organization
 - `role` - required; the student's role in the shared experience
 - `duration_months` - required, non-negative integer
 

@@ -1,13 +1,14 @@
 # SmartIntern Demo Application
 
-This is the minimal live-demo application for the SmartIntern database project. It uses Node.js, Express, vanilla HTML/CSS/JavaScript, and the local MySQL database.
+This is the full live-demo application for the SmartIntern database project. It uses Node.js, Express, vanilla HTML/CSS/JavaScript, and the local MySQL database.
 
 ## Setup
 
-1. Make sure the `smartintern_db` database has been created and populated using the SQL files in `sql/`.
-2. Copy `.env.example` to `.env`.
-3. Put the MySQL root password in `.env` as `DB_PASSWORD`. Do not commit `.env`.
-4. Install dependencies:
+1. Make sure the `smartintern_db` database has been created and populated using `01_create_schema.sql` and `02_sample_data.sql` in `sql/`.
+2. If the database was created before the shared-organization experience update, run `05_update_experience_structure.sql` once in MySQL Workbench.
+3. Copy `.env.example` to `.env`.
+4. Put the MySQL root password in `.env` as `DB_PASSWORD`. Do not commit `.env`.
+5. Install dependencies:
 
 ```text
 npm install

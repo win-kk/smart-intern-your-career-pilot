@@ -223,6 +223,13 @@ app.get('/api/catalog/certifications', studentOnly, async (_req, res, next) => {
   } catch (error) { next(error); }
 });
 
+app.get('/api/catalog/experience', studentOnly, async (_req, res, next) => {
+  try {
+    const [rows] = await pool.query('SELECT experience_id, organization FROM experience ORDER BY organization');
+    res.json(rows);
+  } catch (error) { next(error); }
+});
+
 app.get('/api/student/profile', studentOnly, async (req, res, next) => {
   try {
     const studentId = req.session.user.profileId;
@@ -254,7 +261,7 @@ app.get('/api/student/profile', studentOnly, async (req, res, next) => {
       WHERE sc.student_id = ? ORDER BY sc.issue_date DESC
     `, [studentId]);
     const [experience] = await pool.query(`
-      SELECT sx.experience_id, x.organization, x.position_title, sx.role, sx.duration_months
+      SELECT sx.experience_id, x.organization, sx.position_title, sx.role, sx.duration_months
       FROM student_experience AS sx JOIN experience AS x ON x.experience_id = sx.experience_id
       WHERE sx.student_id = ? ORDER BY sx.duration_months DESC
     `, [studentId]);
@@ -399,13 +406,19 @@ app.delete('/api/student/certifications/:certificationId', studentOnly, async (r
 app.post('/api/student/experience', studentOnly, async (req, res, next) => {
   const connection = await pool.getConnection();
   try {
-    const organization = requiredText(req.body.organization, 'Organization');
+    const experienceId = req.body.experienceId ? idParam(req.body.experienceId, 'experienceId') : null;
+    const organization = optionalText(req.body.organization);
     const positionTitle = requiredText(req.body.positionTitle, 'Position title');
     const role = requiredText(req.body.role, 'Role');
     const durationMonths = numberValue(req.body.durationMonths, 'Duration', 0, 600);
+    if (!experienceId && !organization) return res.status(400).json({ error: 'Select an organization' });
     await connection.beginTransaction();
-    const [experience] = await connection.query('INSERT INTO experience (organization, position_title) VALUES (?, ?)', [organization, positionTitle]);
-    await connection.query('INSERT INTO student_experience (student_id, experience_id, role, duration_months) VALUES (?, ?, ?, ?)', [req.session.user.profileId, experience.insertId, role, durationMonths]);
+    let resolvedExperienceId = experienceId;
+    if (!resolvedExperienceId) {
+      const [experience] = await connection.query('INSERT INTO experience (organization) VALUES (?) ON DUPLICATE KEY UPDATE experience_id = LAST_INSERT_ID(experience_id)', [organization]);
+      resolvedExperienceId = experience.insertId;
+    }
+    await connection.query('INSERT INTO student_experience (student_id, experience_id, position_title, role, duration_months) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE position_title = VALUES(position_title), role = VALUES(role), duration_months = VALUES(duration_months)', [req.session.user.profileId, resolvedExperienceId, positionTitle, role, durationMonths]);
     await connection.commit();
     res.status(201).json({ experienceId: experience.insertId });
   } catch (error) { await connection.rollback(); next(error); } finally { connection.release(); }

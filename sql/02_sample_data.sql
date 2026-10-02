@@ -37,9 +37,9 @@ INSERT INTO certifications (certification_id, certification_name, issuer) VALUES
 (1, 'Database Fundamentals', 'Smart University'),
 (2, 'Cloud Practitioner Basics', 'Training Provider');
 
-INSERT INTO experience (experience_id, organization, position_title) VALUES
-(1, 'University IT Help Desk', 'IT Support Assistant'),
-(2, 'Community Technology Group', 'Volunteer Developer');
+INSERT INTO experience (experience_id, organization) VALUES
+(1, 'University IT Help Desk'),
+(2, 'Community Technology Group');
 
 INSERT INTO internships (internship_id, company_id, title, min_gpa, min_study_year) VALUES
 (1, 1, 'Junior Web Developer Intern', 3.00, 2),
@@ -96,11 +96,11 @@ INSERT INTO student_certifications (student_id, certification_id, issue_date) VA
 (3, 2, '2026-05-10');
 
 INSERT INTO student_experience
-    (student_id, experience_id, role, duration_months)
+    (student_id, experience_id, position_title, role, duration_months)
 VALUES
-(1, 1, 'Support assistant', 8),
-(2, 1, 'Support assistant', 5),
-(3, 2, 'Developer', 6);
+(1, 1, 'IT Support Assistant', 'Support assistant', 8),
+(2, 1, 'IT Support Assistant', 'Support assistant', 5),
+(3, 2, 'Volunteer Developer', 'Developer', 6);
 
 INSERT INTO applications
     (application_id, student_id, internship_id, application_date, status, match_score)
