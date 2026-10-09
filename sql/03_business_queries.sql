@@ -1,5 +1,10 @@
 USE smartintern_db;
 
+-- The three agreed business questions:
+-- 1. Which students are the best qualified for each internship?
+-- 2. Which mandatory skills are missing for a selected student and internship?
+-- 3. What is the match score for every student-internship pair?
+
 -- Query 1: List all student profiles.
 SELECT s.student_id, s.first_name, s.last_name, u.email
 FROM students AS s

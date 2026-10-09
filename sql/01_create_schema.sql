@@ -123,7 +123,11 @@ CREATE TABLE student_education (
     study_year TINYINT UNSIGNED NOT NULL,
     graduation_year YEAR,
     is_current BOOLEAN NOT NULL DEFAULT TRUE,
+    current_student_id INT GENERATED ALWAYS AS (
+        CASE WHEN is_current THEN student_id ELSE NULL END
+    ) STORED,
     PRIMARY KEY (student_id, education_id),
+    UNIQUE KEY uq_student_one_current_education (current_student_id),
     CONSTRAINT chk_student_education_gpa
         CHECK (gpa BETWEEN 0.00 AND 4.00),
     CONSTRAINT chk_student_education_study_year

@@ -1,8 +1,14 @@
 # SmartIntern Relational Schema Specification
 
-Status: Approved discussion design; SQL implementation has not started.
+Status: Approved implementation specification.
 
-This document records the database design agreed during project discussion. The project uses MySQL and focuses on the relational database. Frontend and backend implementation are outside this specification.
+This document records the database design agreed during project discussion. The project uses MySQL and focuses on the relational database.
+
+## Business questions
+
+1. Which students are the best qualified for each internship?
+2. Which mandatory skills are missing for a selected student and internship?
+3. What is the match score for every student-internship pair?
 
 ## Core tables
 
@@ -26,6 +32,8 @@ This document records the database design agreed during project discussion. The 
 - `user_id` - required, unique foreign key to `users.user_id`
 - `company_name` - required
 - `description` - optional
+
+Each Student or Company profile belongs to exactly one User account. The unique `user_id` foreign key implements the one-to-one profile mapping. The specialization is disjoint and partial: each account has one supported role, and this project supports only Student and Company profiles.
 
 ### internships
 
@@ -112,7 +120,7 @@ The `is_mandatory` field applies only to skills.
 
 Composite primary key: (`student_id`, `education_id`)
 
-The current education record supplies the GPA and study year used for matching. The SQL queries use `is_current = TRUE` to select it. For this mini project, the sample data and normal data-entry process should maintain one current record per student.
+The current education record supplies the GPA and study year used for matching. The SQL queries use `is_current = TRUE` to select it. A generated helper key and unique constraint enforce at most one current record per student; the application also clears the previous current flag before selecting a new one.
 
 ### student_projects
 
@@ -168,6 +176,9 @@ Rules:
 - If study year is below `min_study_year`, study-year points become zero.
 - Optional skills reduce the skill score when missing but do not independently disqualify the student.
 - The final score is the sum of skill, GPA, and study-year points.
+- Skill points are calculated as `(satisfied skills / total required skills) * 60`, unless a mandatory skill fails, in which case skill points are zero.
+- GPA points are calculated as `(GPA / 4.00) * 20` when the minimum GPA is met; otherwise they are zero.
+- Study-year points are calculated as `(study year / 4.00) * 20` when the minimum study year is met; otherwise they are zero.
 - SQL reports can label a result as `Qualified` or `Not fully qualified`; this label does not need to be stored as an additional column.
 
 ## Foreign-key deletion policy

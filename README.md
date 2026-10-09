@@ -5,7 +5,7 @@ This is the full live-demo application for the SmartIntern database project. It 
 ## Setup
 
 1. Make sure the `smartintern_db` database has been created and populated using `01_create_schema.sql` and `02_sample_data.sql` in `sql/`.
-2. If the database was created before the shared-organization experience, project-code, and catalog-uniqueness updates, run `05_update_experience_structure.sql`, `06_update_project_codes.sql`, and `07_add_catalog_uniqueness.sql` once in MySQL Workbench.
+2. If the database was created before the shared-organization experience, project-code, catalog-uniqueness, and current-education updates, run `05_update_experience_structure.sql`, `06_update_project_codes.sql`, `07_add_catalog_uniqueness.sql`, and `08_enforce_one_current_education.sql` once in MySQL Workbench. Check for duplicate current records before running migration 08.
 3. Copy `.env.example` to `.env`.
 4. Put the MySQL root password in `.env` as `DB_PASSWORD`. Do not commit `.env`.
 5. Install dependencies:
