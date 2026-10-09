@@ -8,7 +8,8 @@ This document records the decisions made after the proposal review.
 - Admin accounts, administrator workflows, and career-support staff workflows are out of scope.
 - Every Student profile belongs to exactly one User account.
 - Every Company profile belongs to exactly one User account.
-- The specialization is disjoint and partial: one account has one supported role, and not every possible User subtype must exist.
+- The database implements these as one-to-one relationships using a unique `user_id` foreign key in each profile table.
+- Student and Company keep separate primary keys: `student_id` and `company_id`.
 
 ## Internship rules
 
@@ -41,4 +42,4 @@ This document records the decisions made after the proposal review.
 
 ## ERD mapping note
 
-The ERD may show Student and Company as subtypes of User. In the relational implementation, each subtype table has its own primary key and a unique foreign key to `users.user_id`. This is the relational mapping of the one-to-one subtype relationship.
+The ERD should show one-to-one relationships from User to Student and User to Company. In the relational implementation, each profile table has its own primary key and a unique foreign key to `users.user_id`.

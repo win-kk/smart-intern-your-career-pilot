@@ -33,7 +33,7 @@ This document records the database design agreed during project discussion. The 
 - `company_name` - required
 - `description` - optional
 
-Each Student or Company profile belongs to exactly one User account. The unique `user_id` foreign key implements the one-to-one profile mapping. The specialization is disjoint and partial: each account has one supported role, and this project supports only Student and Company profiles.
+Each Student or Company profile belongs to exactly one User account. The unique `user_id` foreign key implements the one-to-one relationship. Student and Company each keep a separate primary key (`student_id` and `company_id`) because their profile records are separate entities in the relational schema. The User role determines which profile type the account uses.
 
 ### internships
 
