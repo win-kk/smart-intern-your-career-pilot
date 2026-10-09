@@ -11,6 +11,7 @@ WITH current_education AS (
     i.internship_id,
     i.title,
     c.company_name,
+    MAX(c.description) AS company_description,
     ce.gpa,
     ce.study_year,
     i.min_gpa,
@@ -27,6 +28,9 @@ WITH current_education AS (
          OR ss.proficiency_level < isk.minimum_proficiency
          OR ss.years_experience < isk.required_years)
       THEN 1 ELSE 0 END) AS failed_mandatory_skills,
+    GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.skill_name SEPARATOR ', ') AS required_skills,
+    GROUP_CONCAT(DISTINCT CASE WHEN isk.is_mandatory = TRUE THEN sk.skill_name END ORDER BY sk.skill_name SEPARATOR ', ') AS mandatory_skills,
+    GROUP_CONCAT(DISTINCT CASE WHEN isk.is_mandatory = FALSE THEN sk.skill_name END ORDER BY sk.skill_name SEPARATOR ', ') AS optional_skills,
     GROUP_CONCAT(DISTINCT CASE
       WHEN isk.is_mandatory = TRUE
        AND (ss.skill_id IS NULL
@@ -57,6 +61,7 @@ WITH current_education AS (
 )
 SELECT
   scored.*,
+  COALESCE(ac.application_count, 0) AS applicant_count,
   a.application_id,
   a.status AS application_status,
   CASE WHEN a.application_id IS NULL THEN FALSE ELSE TRUE END AS has_applied,
@@ -65,6 +70,11 @@ SELECT
          AND study_year >= min_study_year
        THEN 'Qualified' ELSE 'Not fully qualified' END AS qualification_status
 FROM scored
+LEFT JOIN (
+  SELECT internship_id, COUNT(*) AS application_count
+  FROM applications
+  GROUP BY internship_id
+) AS ac ON ac.internship_id = scored.internship_id
 LEFT JOIN applications AS a
   ON a.student_id = scored.student_id
  AND a.internship_id = scored.internship_id

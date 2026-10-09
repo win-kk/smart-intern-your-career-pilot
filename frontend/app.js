@@ -10,6 +10,7 @@ const state = {
   experienceCatalog: [],
   companyInternships: [],
   selectedInternship: null,
+  selectedOpportunityId: null,
 };
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) =>
@@ -39,10 +40,12 @@ function empty(message) {
   return `<div class="empty-state">${escapeHtml(message)}</div>`;
 }
 function statusClass(status) {
-  return status === "Qualified"
+  return status === "Qualified" || status === "Accepted"
     ? "status-qualified"
-    : status === "Not fully qualified"
+    : status === "Not fully qualified" || status === "Rejected"
       ? "status-partial"
+      : status === "Under Review"
+        ? "status-review"
       : "status-pending";
 }
 
@@ -189,11 +192,10 @@ function setupLogin() {
 function navItems() {
   return state.user.role === "Student"
     ? [
-        ["overview", "Overview"],
-        ["matches", "Opportunities"],
+        ["overview", "Find jobs"],
         ["applications", "My applications"],
         ["profile", "My profile"],
-        ["insights", "My insights"],
+        ["insights", "Analytics"],
       ]
     : [
         ["overview", "Overview"],
@@ -206,6 +208,11 @@ function navItems() {
 function renderShell() {
   $("#login-screen").classList.add("hidden");
   $("#app-shell").classList.remove("hidden");
+  $("#app-shell").classList.toggle("student-workspace-shell", state.user.role === "Student");
+  $("#app-shell").classList.toggle(
+    "student-discovery-shell",
+    state.user.role === "Student" && state.page === "overview",
+  );
   $("#sidebar-user").innerHTML =
     `<strong>${escapeHtml(state.user.email)}</strong><span>${escapeHtml(state.user.role)} account</span>`;
   $("#main-nav").innerHTML = navItems()
@@ -214,6 +221,11 @@ function renderShell() {
         `<button class="nav-button ${state.page === id ? "active" : ""}" data-page="${id}" aria-current="${state.page === id ? "page" : "false"}">${label}</button>`,
     )
     .join("");
+  $("#student-nav-user").textContent = state.user.email;
+  $("#student-top-nav").innerHTML = navItems()
+    .map(([id, label]) => `<button class="student-nav-button ${state.page === id ? "active" : ""}" data-page="${id}" aria-current="${state.page === id ? "page" : "false"}">${label}</button>`)
+    .join("");
+  $("#student-site-header").classList.toggle("hidden", state.user.role !== "Student");
   document.querySelectorAll(".nav-button").forEach(
     (button) =>
       (button.onclick = () => {
@@ -222,8 +234,26 @@ function renderShell() {
         renderPage();
       }),
   );
-  $("#logout-button").onclick = async () => {
-    const button = $("#logout-button");
+  document.querySelectorAll(".student-nav-button").forEach(
+    (button) => (button.onclick = () => {
+      state.page = button.dataset.page;
+      state.selectedOpportunityId = null;
+      if (state.page === "profile") {
+        state.profileMode = "preview";
+        state.cvDraft = null;
+      }
+      renderShell();
+      renderPage();
+    }),
+  );
+  $(".student-site-brand").onclick = (event) => {
+    event.preventDefault();
+    state.page = "overview";
+    state.selectedOpportunityId = null;
+    renderShell();
+    renderPage();
+  };
+  const signOut = async (button) => {
     button.disabled = true;
     button.textContent = "Signing out...";
     try {
@@ -235,6 +265,8 @@ function renderShell() {
       button.textContent = "Sign out";
     }
   };
+  $("#logout-button").onclick = () => signOut($("#logout-button"));
+  $("#student-signout").onclick = () => signOut($("#student-signout"));
 }
 async function loadStudentData() {
   [
@@ -262,21 +294,19 @@ function pageHeader(kicker, title) {
   $("#page-kicker").textContent = kicker;
   $("#page-title").textContent = title;
 }
-function matchCards(matches) {
-  if (!matches.length)
-    return empty(
-      "No matches are available yet. Complete your current education and skill profile first.",
-    );
-  return matches
-    .map((m) => {
-      const applied = Boolean(m.has_applied || m.application_id);
-      const qualified = m.qualification_status === "Qualified";
-      const missing = m.missing_mandatory_skills
-        ? `<div class="missing-note">Missing mandatory skills: ${escapeHtml(m.missing_mandatory_skills)}</div>`
-        : "";
-      return `<article class="match-card"><div class="match-head"><div><h3>${escapeHtml(m.title)}</h3><p class="match-subtitle">${escapeHtml(m.company_name)}</p></div><div class="score-block"><div class="score">${Number(m.match_score).toFixed(0)}</div><div class="score-label">match score</div></div></div><span class="status-pill ${statusClass(m.qualification_status)}">${escapeHtml(m.qualification_status)}</span><div class="details-row"><span class="detail-chip">GPA ${m.gpa} / ${m.min_gpa}</span><span class="detail-chip">Year ${m.study_year} / ${m.min_study_year}</span><span class="detail-chip">Skills ${m.satisfied_skills}/${m.total_skills}</span></div>${missing}<div class="action-row"><span class="muted">${applied ? `Application: ${escapeHtml(m.application_status)}` : "Ready to apply"}</span><button class="${applied ? "secondary-button" : "primary-button"} apply-button" data-id="${m.internship_id}" ${applied ? "disabled" : ""}>${applied ? "Applied" : "Apply now"}</button></div></article>`;
-    })
-    .join("");
+function matchAnalysis(m) {
+  const skills = Number(m.total_skills)
+    ? (Number(m.failed_mandatory_skills) > 0 ? 0 : Number(m.satisfied_skills) / Number(m.total_skills) * 60)
+    : 0;
+  const gpa = Number(m.gpa) >= Number(m.min_gpa) ? Number(m.gpa) / 4 * 20 : 0;
+  const year = Number(m.study_year) >= Number(m.min_study_year) ? Number(m.study_year) / 4 * 20 : 0;
+  const gaps = [];
+  if (m.missing_mandatory_skills) gaps.push(`Add or improve: ${escapeHtml(m.missing_mandatory_skills)}.`);
+  else if (Number(m.satisfied_skills) < Number(m.total_skills)) gaps.push("You meet the mandatory skill checks; building proficiency in the other listed skills could strengthen your match.");
+  if (Number(m.gpa) < Number(m.min_gpa)) gaps.push(`Your GPA is below the ${m.min_gpa} minimum.`);
+  if (Number(m.study_year) < Number(m.min_study_year)) gaps.push(`This role requires study year ${m.min_study_year} or above.`);
+  const feedback = gaps.length ? gaps.join(" ") : "You meet the listed minimum requirements. Keep your skills and education profile up to date.";
+  return `<section class="match-analysis" aria-label="Match analysis"><div class="analysis-heading"><div><span class="eyebrow">Your match analysis</span><h4>What contributed to your fit</h4></div><strong>${Number(m.match_score).toFixed(0)}%</strong></div><div class="analysis-breakdown"><div><span>Skills</span><strong>${skills.toFixed(1)} / 60</strong></div><div><span>GPA</span><strong>${gpa.toFixed(1)} / 20</strong><small>${m.gpa} GPA · ${m.min_gpa} required</small></div><div><span>Study year</span><strong>${year.toFixed(1)} / 20</strong><small>Year ${m.study_year} · ${m.min_study_year} required</small></div></div><p class="analysis-feedback"><strong>Feedback</strong> ${feedback}</p></section>`;
 }
 function bindApplyButtons() {
   document.querySelectorAll(".apply-button:not([disabled])").forEach(
@@ -291,8 +321,10 @@ function bindApplyButtons() {
             body: JSON.stringify({ internshipId: Number(button.dataset.id) }),
           });
           showToast(
-            `Application submitted with match score ${Number(result.matchScore).toFixed(0)}.`,
+            "Application submitted. Opening your application analytics.",
           );
+          state.page = "insights";
+          renderShell();
           await renderPage();
         } catch (error) {
           button.disabled = false;
@@ -305,29 +337,94 @@ function bindApplyButtons() {
 async function studentOverview() {
   await loadStudentData();
   const p = state.profile.profile;
-  pageHeader("Student workspace", `Welcome back, ${p.first_name}`);
-  const qualified = state.matches.filter(
-    (m) => m.qualification_status === "Qualified",
-  ).length;
+  pageHeader("Student workspace", "Overview");
+  const openMatches = state.matches.filter((m) => !m.has_applied && !m.application_id);
+  const companies = [...new Set(openMatches.map((m) => m.company_name))].sort((a, b) => a.localeCompare(b));
+  const requiredSkills = [...new Set(openMatches.flatMap((m) => String(m.required_skills || "").split(", ").filter(Boolean)))].sort((a, b) => a.localeCompare(b));
+  const selected = openMatches.find((m) => Number(m.internship_id) === Number(state.selectedOpportunityId));
+  if (selected) {
+    renderOpportunityDetails(selected, openMatches, p.first_name);
+    return;
+  }
+  state.selectedOpportunityId = null;
   $("#page-content").innerHTML =
-    `<section class="welcome-banner"><div><p class="eyebrow">Your next opportunity</p><h2>Make your profile work for you.</h2><p>SmartIntern compares your evidence with transparent requirements so you can see where you fit and what to improve.</p></div><button class="primary-button" id="go-profile">Strengthen my profile</button></section><div class="stats-grid"><div class="stat-card"><div class="stat-label">Qualified matches</div><div class="stat-value">${qualified}</div></div><div class="stat-card"><div class="stat-label">Applications</div><div class="stat-value">${state.applications.length}</div></div><div class="stat-card"><div class="stat-label">Current GPA</div><div class="stat-value">${p.gpa ?? "—"}</div></div><div class="stat-card"><div class="stat-label">Study year</div><div class="stat-value">${p.study_year ?? "—"}</div></div></div><div class="page-grid"><section class="panel-card"><div class="panel-heading"><div><h2>Recommended opportunities</h2><p>Sorted by transparent match score.</p></div><button class="secondary-button" id="see-all-matches">See all</button></div><div class="card-list">${matchCards(state.matches.slice(0, 3))}</div></section></div>`;
+    `<section class="discovery-hero"><div class="discovery-hero-copy"><p class="eyebrow">Student workspace</p><h2>Welcome back, ${escapeHtml(p.first_name)}</h2><p>Search internships from participating companies and explore the requirements before applying.</p></div><form class="discovery-search" id="opportunity-search"><label class="search-field"><span aria-hidden="true">⌕</span><input name="keyword" type="search" placeholder="Job title, company, or skill" aria-label="Search by job title, company, or skill"></label><button class="primary-button" type="submit">Search</button></form></section><section class="discovery-section"><div class="discovery-title-row"><div><p class="eyebrow">SmartIntern · Internship discovery</p><h2>Opportunities from participating companies</h2><p id="opportunity-count" class="muted"></p></div><label class="sort-control">Sort by<select id="opportunity-sort"><option value="relevance">Best fit</option><option value="company">Company name</option><option value="title">Job title</option></select></label></div><div class="discovery-layout"><aside class="filter-panel"><div class="filter-heading"><h3>Filters</h3><button type="button" class="text-button" id="clear-opportunity-filters">Clear all</button></div><label class="filter-label" for="company-filter">Company</label><select id="company-filter"><option value="">All companies</option>${companies.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}</select><label class="filter-label" for="fit-filter">Requirements</label><select id="fit-filter"><option value="all">All opportunities</option><option value="qualified">Meets minimums</option><option value="improve">Needs improvement</option></select><label class="filter-label" for="gpa-filter">Minimum GPA</label><select id="gpa-filter"><option value="">Any requirement</option><option value="3">3.0 or below</option><option value="3.5">3.5 or below</option><option value="4">4.0 or below</option></select><label class="filter-label" for="year-filter">Minimum study year</label><select id="year-filter"><option value="">Any year</option><option value="2">Year 2 or below</option><option value="3">Year 3 or below</option><option value="4">Year 4 or below</option></select>${requiredSkills.length ? `<label class="filter-label" for="skill-filter">Required skill</label><select id="skill-filter"><option value="">Any skill</option>${requiredSkills.map((skill) => `<option value="${escapeHtml(skill)}">${escapeHtml(skill)}</option>`).join("")}</select>` : ""}<p class="filter-note">Filters use the internship requirements saved by each company.</p></aside><div class="opportunity-grid-wrap"><div class="opportunity-grid" id="opportunity-results"></div></div></div></section>`;
+  const searchForm = $("#opportunity-search");
+  const controls = [$("#company-filter"), $("#fit-filter"), $("#gpa-filter"), $("#year-filter"), $("#skill-filter"), $("#opportunity-sort")].filter(Boolean);
+  const renderResults = () => {
+    const keyword = searchForm.elements.keyword.value.trim().toLowerCase();
+    const company = $("#company-filter").value;
+    const fit = $("#fit-filter").value;
+    const maxGpa = Number($("#gpa-filter").value || Infinity);
+    const maxYear = Number($("#year-filter").value || Infinity);
+    const skill = $("#skill-filter")?.value || "";
+    const sort = $("#opportunity-sort").value;
+    let results = openMatches.filter((m) => {
+      const text = `${m.title} ${m.company_name} ${m.required_skills || ""}`.toLowerCase();
+      const qualified = m.qualification_status === "Qualified";
+      return (!keyword || text.includes(keyword)) && (!company || m.company_name === company) && (fit === "all" || (fit === "qualified" ? qualified : !qualified)) && Number(m.min_gpa) <= maxGpa && Number(m.min_study_year) <= maxYear && (!skill || String(m.required_skills || "").split(", ").includes(skill));
+    });
+    if (sort === "company") results.sort((a, b) => a.company_name.localeCompare(b.company_name));
+    if (sort === "title") results.sort((a, b) => a.title.localeCompare(b.title));
+    $("#opportunity-count").textContent = `${results.length} of ${openMatches.length} opportunities · ${companies.length} ${companies.length === 1 ? "company" : "companies"}`;
+    $("#opportunity-results").innerHTML = results.length ? results.map(opportunityCard).join("") : empty("No opportunities match those filters. Try changing your search or clearing a filter.");
+    document.querySelectorAll(".opportunity-card").forEach((card) => {
+      card.onclick = (event) => {
+        if (event.target.closest(".apply-button")) return;
+        state.selectedOpportunityId = Number(card.dataset.id);
+        studentOverview();
+      };
+      card.onkeydown = (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          state.selectedOpportunityId = Number(card.dataset.id);
+          studentOverview();
+        }
+      };
+    });
+    bindApplyButtons();
+  };
+  searchForm.onsubmit = (event) => { event.preventDefault(); renderResults(); };
+  searchForm.elements.keyword.oninput = renderResults;
+  controls.forEach((control) => control.addEventListener("change", renderResults));
+  $("#clear-opportunity-filters").onclick = () => {
+    searchForm.reset();
+    controls.forEach((control) => { control.value = ""; });
+    $("#fit-filter").value = "all";
+    $("#opportunity-sort").value = "relevance";
+    renderResults();
+  };
+  renderResults();
+}
+function opportunityCard(m) {
+  const skillTags = String(m.required_skills || "").split(", ").filter(Boolean).slice(0, 4);
+  const hasMore = String(m.required_skills || "").split(", ").filter(Boolean).length - skillTags.length;
+  return `<article class="opportunity-card" data-id="${m.internship_id}" tabindex="0" aria-label="View ${escapeHtml(m.title)} at ${escapeHtml(m.company_name)}"><div class="opportunity-card-top"><span class="company-avatar" aria-hidden="true">${escapeHtml(String(m.company_name || "C").trim().charAt(0).toUpperCase())}</span><span class="role-type">Internship</span></div><h3>${escapeHtml(m.title)}</h3><p class="company-name">${escapeHtml(m.company_name)} · ${Number(m.applicant_count || 0)} applicants</p><p class="role-summary">${escapeHtml(m.company_description || "Explore this role and review its requirements before applying.")}</p><div class="opportunity-tags">${skillTags.map((tag) => `<span class="opportunity-tag">${escapeHtml(tag)}</span>`).join("")}${hasMore > 0 ? `<span class="opportunity-tag">+${hasMore} more</span>` : ""}</div><div class="requirement-summary"><span>Minimum GPA <strong>${Number(m.min_gpa).toFixed(1)}</strong></span><span>Study year <strong>${Number(m.min_study_year)}+</strong></span></div><div class="opportunity-card-actions"><span class="muted">${m.qualification_status === "Qualified" ? "Meets minimums" : "Review requirements"}</span><button type="button" class="primary-button apply-button" data-id="${m.internship_id}">Apply</button></div></article>`;
+}
+function renderOpportunityDetails(selected, opportunities, firstName) {
+  const list = opportunities.map((item) => `<button type="button" class="detail-role-option ${Number(item.internship_id) === Number(selected.internship_id) ? "active" : ""}" data-id="${item.internship_id}"><span class="company-avatar" aria-hidden="true">${escapeHtml(String(item.company_name || "C").trim().charAt(0).toUpperCase())}</span><span class="detail-role-copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.company_name)} · ${Number(item.applicant_count || 0)} applicants</small><span class="opportunity-tags">${String(item.required_skills || "").split(", ").filter(Boolean).slice(0, 2).map((skill) => `<i class="opportunity-tag">${escapeHtml(skill)}</i>`).join("")}</span></span></button>`).join("");
+  const mandatory = String(selected.mandatory_skills || "").split(", ").filter(Boolean);
+  const optional = String(selected.optional_skills || "").split(", ").filter(Boolean);
+  const description = selected.company_description || "This company has not added a profile description yet.";
+  $("#page-content").innerHTML = `<section class="detail-hero"><p class="eyebrow">Student workspace · Welcome back, ${escapeHtml(firstName)}</p><h2>Explore the opportunity</h2><p>Review the role details and requirements before you apply.</p></section><div class="detail-toolbar"><button type="button" class="secondary-button" id="back-to-opportunities">← Back to opportunities</button><span class="muted">${opportunities.length} open roles from ${new Set(opportunities.map((item) => item.company_name)).size} companies</span></div><section class="opportunity-detail-layout"><aside class="detail-role-list" aria-label="Other open internships"><div class="detail-list-heading"><h3>Open opportunities</h3><span>${opportunities.length}</span></div>${list || empty("No other open opportunities.")}</aside><article class="role-detail-main"><div class="role-detail-heading"><div><p class="eyebrow">${escapeHtml(selected.company_name)}</p><h1>${escapeHtml(selected.title)}</h1><p class="company-name">${Number(selected.applicant_count || 0)} applicants</p></div><span class="role-type">Internship</span></div><div class="role-detail-section"><h2>About the role</h2><p>This internship is offered by ${escapeHtml(selected.company_name)}. The posting includes the eligibility requirements and skill expectations below so you can review the fit before applying.</p></div><div class="role-detail-section"><h2>Eligibility</h2><div class="eligibility-grid"><div><span>Minimum GPA</span><strong>${Number(selected.min_gpa).toFixed(2)} / 4.00</strong><small>Your current GPA: ${escapeHtml(selected.gpa)}</small></div><div><span>Study year</span><strong>Year ${Number(selected.min_study_year)} or above</strong><small>Your current year: ${escapeHtml(selected.study_year)}</small></div></div></div><div class="role-detail-section"><h2>Required skills</h2><p class="muted">Skills marked as mandatory are eligibility requirements for this role.</p><div class="detail-skill-list">${mandatory.map((skill) => `<span class="detail-skill mandatory">${escapeHtml(skill)} <small>Required</small></span>`).join("") || `<span class="muted">No mandatory skills are listed.</span>`}${optional.map((skill) => `<span class="detail-skill">${escapeHtml(skill)} <small>Additional</small></span>`).join("")}</div></div><div class="role-detail-section company-description-inline"><h2>About ${escapeHtml(selected.company_name)}</h2><p>${escapeHtml(description)}</p></div></article><aside class="company-detail-side"><section class="company-info-card"><div class="company-info-heading"><span class="company-avatar">${escapeHtml(String(selected.company_name || "C").trim().charAt(0).toUpperCase())}</span><div><h3>${escapeHtml(selected.company_name)}</h3><p>Participating company</p></div></div><div class="company-info-section"><h4>Company overview</h4><p>${escapeHtml(description)}</p></div><div class="company-info-section"><h4>Minimum requirements</h4><p>GPA ${Number(selected.min_gpa).toFixed(2)} · Study year ${Number(selected.min_study_year)}+</p></div><div class="company-info-section"><h4>Role fit</h4><span class="status-pill ${statusClass(selected.qualification_status)}">${selected.qualification_status === "Qualified" ? "Meets minimums" : "Review requirements"}</span></div><button type="button" class="primary-button wide apply-button" data-id="${selected.internship_id}">Apply now</button></section></aside></section>`;
+  $("#back-to-opportunities").onclick = () => {
+    state.selectedOpportunityId = null;
+    studentOverview();
+  };
+  document.querySelectorAll(".detail-role-option").forEach((button) => {
+    button.onclick = () => {
+      state.selectedOpportunityId = Number(button.dataset.id);
+      studentOverview();
+    };
+  });
   bindApplyButtons();
-  $("#go-profile").onclick = () => {
-    state.page = "profile";
-    renderShell();
-    renderPage();
-  };
-  $("#see-all-matches").onclick = () => {
-    state.page = "matches";
-    renderShell();
-    renderPage();
-  };
 }
 async function studentMatches() {
   await loadStudentData();
   pageHeader("Student workspace", "Opportunities");
+  const openMatches = state.matches.filter((m) => !m.has_applied && !m.application_id);
   $("#page-content").innerHTML =
-    `<section class="panel-card"><div class="panel-heading"><div><h2>Internship matches</h2><p>Mandatory requirements are explained before you apply.</p></div></div><div class="card-list">${matchCards(state.matches)}</div></section>`;
+    `<section class="panel-card"><div class="panel-heading"><div><h2>Open opportunities</h2><p>Applied roles move to Analytics, where you can follow progress and review your fit feedback.</p></div></div><div class="opportunity-grid">${openMatches.length ? openMatches.map(opportunityCard).join("") : empty("You have applied to every available opportunity. Check Analytics for updates.")}</div></section>`;
   bindApplyButtons();
 }
 async function studentApplications() {
@@ -387,6 +484,7 @@ async function saveForm(url, method, form) {
       body: JSON.stringify(formData(form)),
     });
     showToast("Saved successfully.");
+    state.cvDraft = null;
     await renderPage();
   } catch (error) {
     if (submit) {
@@ -398,12 +496,22 @@ async function saveForm(url, method, form) {
 }
 async function studentInsights() {
   await loadStudentData();
-  pageHeader("Student workspace", "My insights");
-  const qualified = state.matches.filter(
-    (m) => m.qualification_status === "Qualified",
-  );
-  $("#page-content").innerHTML =
-    `<div class="stats-grid"><div class="stat-card"><div class="stat-label">Opportunities</div><div class="stat-value">${state.matches.length}</div></div><div class="stat-card"><div class="stat-label">Qualified</div><div class="stat-value">${qualified.length}</div></div><div class="stat-card"><div class="stat-label">Applications</div><div class="stat-value">${state.applications.length}</div></div><div class="stat-card"><div class="stat-label">Profile skills</div><div class="stat-value">${state.profile.skills.length}</div></div></div><div class="page-grid"><section class="panel-card"><div class="panel-heading"><div><h2>What your score means</h2><p>SmartIntern uses the agreed transparent rule.</p></div></div><div class="details-row"><span class="detail-chip">Skills 60%</span><span class="detail-chip">GPA 20%</span><span class="detail-chip">Study year 20%</span></div><p class="muted" style="margin-top:18px;line-height:1.7">Mandatory skills are eligibility signals. If one is missing, the skill component becomes zero, while GPA and study-year points remain visible. This helps you understand exactly what to improve.</p></section></div>`;
+  pageHeader("Student workspace", "Analytics");
+  const applicationCards = state.applications.map((application) => {
+    const match = state.matches.find((item) => Number(item.internship_id) === Number(application.internship_id));
+    const status = application.status;
+    const stage = status === "Accepted" || status === "Rejected" ? 2 : status === "Under Review" ? 1 : 0;
+    const outcome = status === "Accepted" ? "accepted" : status === "Rejected" ? "rejected" : "";
+    const progress = `<div class="application-progress ${outcome}" aria-label="Application progress: ${escapeHtml(status)}"><div class="progress-step complete"><span>✓</span><small>Applied</small></div><i class="progress-line ${stage >= 1 ? "complete" : ""}"></i><div class="progress-step ${stage >= 1 ? "complete" : ""} ${stage === 1 ? "current" : ""}"><span>${stage >= 1 ? "✓" : "2"}</span><small>Company review</small></div><i class="progress-line ${stage >= 2 ? "complete" : ""}"></i><div class="progress-step ${stage >= 2 ? "complete" : ""} ${stage === 2 ? "current" : ""}"><span>${stage >= 2 ? "✓" : "3"}</span><small>Decision</small></div></div>`;
+    const analysis = match ? matchAnalysis({ ...match, match_score: application.match_score }) : `<section class="match-analysis"><p>Match detail is unavailable for this application. Your saved score is <strong>${Number(application.match_score).toFixed(0)}%</strong>.</p></section>`;
+    return `<article class="analytics-card"><div class="analytics-card-heading"><div><p class="eyebrow">${escapeHtml(application.company_name)}</p><h3>${escapeHtml(application.title)}</h3><p class="muted">Submitted ${escapeHtml(application.application_date)}</p></div><span class="status-pill ${statusClass(status)}">${escapeHtml(status)}</span></div>${progress}<p class="progress-caption">${status === "Pending" ? "Your application is submitted and waiting for the company to review it." : status === "Under Review" ? "The company is reviewing your application." : status === "Accepted" ? "The company accepted your application." : "The company has completed its review."}</p>${analysis}</article>`;
+  }).join("");
+  $("#page-content").innerHTML = `<section class="analytics-intro"><div><p class="eyebrow">Application center</p><h2>Your applications and match feedback</h2><p>Track each application as it moves through review. Match analytics explain how your profile compares with the role requirements.</p></div><div class="analytics-count"><strong>${state.applications.length}</strong><span>${state.applications.length === 1 ? "application" : "applications"}</span></div></section>${state.applications.length ? `<div class="analytics-list">${applicationCards}</div>` : `<section class="panel-card analytics-empty">${empty("Your application analytics will appear here after you apply to an opportunity.")}<button type="button" class="primary-button" id="browse-opportunities">Browse opportunities</button></section>`}<section class="panel-card score-guide"><div class="panel-heading"><div><h2>How the match score works</h2><p>Each applied role gets a transparent score from these components.</p></div></div><div class="details-row"><span class="detail-chip">Skills 60%</span><span class="detail-chip">GPA 20%</span><span class="detail-chip">Study year 20%</span></div><p class="muted">A missing mandatory skill sets the skills portion to zero. GPA and study-year points are shown separately so you can see where to focus.</p></section>`;
+  $("#browse-opportunities")?.addEventListener("click", () => {
+    state.page = "overview";
+    renderShell();
+    renderPage();
+  });
 }
 async function companyOverview() {
   const report = await api("/api/company/reports");
@@ -500,6 +608,29 @@ async function companyReports() {
   $("#page-content").innerHTML =
     `<div class="stats-grid"><div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value">${report.summary.pending || 0}</div></div><div class="stat-card"><div class="stat-label">Under review</div><div class="stat-value">${report.summary.under_review || 0}</div></div><div class="stat-card"><div class="stat-label">Accepted</div><div class="stat-value">${report.summary.accepted || 0}</div></div><div class="stat-card"><div class="stat-label">Rejected</div><div class="stat-value">${report.summary.rejected || 0}</div></div></div><div class="page-grid"><section class="panel-card"><div class="panel-heading"><div><h2>Application pipeline</h2><p>Use this summary in the recruitment review.</p></div></div>${report.topApplicants.length ? `<div class="table-wrap"><table><thead><tr><th>Internship</th><th>Student</th><th>Score</th><th>Status</th></tr></thead><tbody>${report.topApplicants.map((a) => `<tr><td>${escapeHtml(a.title)}</td><td>${escapeHtml(a.student_name)}</td><td>${Number(a.match_score).toFixed(0)}</td><td>${escapeHtml(a.status)}</td></tr>`).join("")}</tbody></table></div>` : empty("No applications to report yet.")}</section></div>`;
 }
+function cvMarkup(data, draft = {}) {
+  const profile = { ...data.profile, ...(draft.profile || {}) };
+  const education = [...(data.education || [])]; if (draft.pendingEducation) education.unshift(draft.pendingEducation);
+  const skills = [...(data.skills || [])]; if (draft.pendingSkill) skills.unshift(draft.pendingSkill);
+  const projects = [...(data.projects || [])]; if (draft.pendingProject) projects.unshift(draft.pendingProject);
+  const certifications = [...(data.certifications || [])]; if (draft.pendingCertification) certifications.unshift(draft.pendingCertification);
+  const experience = [...(data.experience || [])]; if (draft.pendingExperience) experience.unshift(draft.pendingExperience);
+  const current = education.find((item) => item.is_current) || education[0];
+  const skillItems = skills.map((item) => `<span class='cv-skill-chip'>${escapeHtml(item.skill_name)}${item.proficiency_level ? ` · ${escapeHtml(item.proficiency_level)}/5` : ''}</span>`).join('');
+  return `<article class='cv-paper'><header class='cv-paper-header'><div><p class='cv-kicker'>CURRICULUM VITAE</p><h2>${escapeHtml(`${profile.first_name || 'Your'} ${profile.last_name || 'Name'}`)}</h2><p class='cv-paper-role'>${escapeHtml(current?.degree || 'Student profile')}</p></div><div class='cv-contact'>${escapeHtml(profile.email || 'Add your email')}${current?.institution ? `<br>${escapeHtml(current.institution)}` : ''}</div></header><section class='cv-paper-section'><h3>Profile</h3><p>${skills.length ? `Skills include ${skills.slice(0, 4).map((item) => escapeHtml(item.skill_name)).join(', ')}.` : 'Add skills and experience to build your introduction.'}</p></section><section class='cv-paper-section'><h3>Education</h3>${education.length ? education.map((item) => `<div class='cv-entry'><div><strong>${escapeHtml(item.degree || 'Education')}</strong><p>${escapeHtml(item.institution || 'Institution')}${item.is_current ? ' · Current' : ''}</p></div><span>${item.gpa ? `GPA ${escapeHtml(item.gpa)}` : ''}${item.study_year ? ` · Year ${escapeHtml(item.study_year)}` : ''}</span></div>`).join('') : `<p class='cv-empty-copy'>Your education will appear here.</p>`}</section><section class='cv-paper-section'><h3>Skills</h3><div class='cv-skill-list'>${skillItems || `<p class='cv-empty-copy'>Your skills will appear here.</p>`}</div></section><section class='cv-paper-section'><h3>Projects</h3>${projects.length ? projects.map((item) => `<div class='cv-entry cv-entry-block'><div><strong>${escapeHtml(item.project_name)}</strong><p>${escapeHtml(item.project_role)}${item.technologies ? ` · ${escapeHtml(item.technologies)}` : ''}</p></div></div>`).join('') : `<p class='cv-empty-copy'>Add projects to show practical experience.</p>`}</section>${experience.length ? `<section class='cv-paper-section'><h3>Experience</h3>${experience.map((item) => `<div class='cv-entry'><div><strong>${escapeHtml(item.position_title)}</strong><p>${escapeHtml(item.organization)}${item.role ? ` · ${escapeHtml(item.role)}` : ''}</p></div><span>${item.duration_months ? `${escapeHtml(item.duration_months)} months` : ''}</span></div>`).join('')}</section>` : ''}${certifications.length ? `<section class='cv-paper-section'><h3>Certifications</h3>${certifications.map((item) => `<div class='cv-entry cv-entry-block'><div><strong>${escapeHtml(item.certification_name)}</strong><p>${escapeHtml(item.issuer)}</p></div></div>`).join('')}</section>` : ''}</article>`;
+}
+function cvDraftFromForm(data, tab, form) {
+  const draft = state.cvDraft || {};
+  const values = Object.fromEntries(new FormData(form).entries());
+  if (tab === 'personal') draft.profile = { first_name: values.firstName || data.profile.first_name, last_name: values.lastName || data.profile.last_name };
+  if (tab === 'education' && values.gpa) { const row = state.education.find((item) => String(item.education_id) === values.educationId) || {}; draft.pendingEducation = { degree: values.degree || row.degree || 'Education', institution: values.institution || row.institution || 'Institution', gpa: values.gpa, study_year: values.studyYear, is_current: values.isCurrent === 'true' }; }
+  if (tab === 'skills' && (values.skillId || values.skillName)) { const row = state.skills.find((item) => String(item.skill_id) === values.skillId) || {}; draft.pendingSkill = { skill_name: values.skillName || row.skill_name || 'Skill', proficiency_level: values.proficiencyLevel }; }
+  if (tab === 'projects' && (values.projectName || values.projectCode)) { const row = data.projects.find((item) => item.project_code === values.projectCode) || {}; draft.pendingProject = { project_name: values.projectName || row.project_name || 'Project', project_role: values.projectRole, technologies: values.technologies || row.technologies }; }
+  if (tab === 'certifications' && (values.certificationId || values.certificationName)) { const row = state.certifications.find((item) => String(item.certification_id) === values.certificationId) || {}; draft.pendingCertification = { certification_name: values.certificationName || row.certification_name || 'Certification', issuer: values.issuer || row.issuer || '' }; }
+  if (tab === 'experience' && values.positionTitle) { const row = state.experienceCatalog.find((item) => String(item.experience_id) === values.experienceId) || {}; draft.pendingExperience = { position_title: values.positionTitle, organization: row.organization || 'Organization', role: values.role, duration_months: values.durationMonths }; }
+  state.cvDraft = draft;
+  return draft;
+}
 function profileSection(tab, d) {
   if (tab === "personal")
     return `<section class="profile-panel" aria-labelledby="personal-heading"><div class="panel-heading"><div><h2 id="personal-heading">Personal information</h2><p>Keep the details used to identify you current.</p></div></div><form id="personal-form" class="form-grid"><label>First name<input name="firstName" autocomplete="given-name" required value="${escapeHtml(d.profile.first_name)}"></label><label>Last name<input name="lastName" autocomplete="family-name" required value="${escapeHtml(d.profile.last_name)}"></label><label class="full">Email<input disabled value="${escapeHtml(d.profile.email)}"></label><div class="form-actions full"><button class="primary-button">Save personal information</button></div></form></section>`;
@@ -536,14 +667,26 @@ async function studentProfile() {
   ].filter(Boolean).length;
   const completionPercent = Math.round((completion / 6) * 100);
   state.profileTab = state.profileTab || "personal";
+  state.profileMode = state.profileMode || 'preview';
   pageHeader("Student workspace", "My profile");
   const renderProfile = () => {
+    if (state.profileMode !== 'edit') {
+      $('#page-content').innerHTML = '<div class=cv-preview-actions><button type=button class=primary-button id=edit-cv>Edit CV</button></div><div id=cv-preview class=cv-preview-direct>' + cvMarkup(d, state.cvDraft || {}) + '</div>';
+      $('#edit-cv').onclick = () => { state.profileMode = 'edit'; renderProfile(); };
+      return;
+    }
     const active = tabs.some(([id]) => id === state.profileTab)
       ? state.profileTab
       : "personal";
     state.profileTab = active;
     $("#page-content").innerHTML =
       `<section class="profile-summary"><div><p class="eyebrow">Your profile</p><h2>${escapeHtml(d.profile.first_name)} ${escapeHtml(d.profile.last_name)}</h2><p>Keep your evidence current to receive more accurate internship matches.</p></div><div class="completion-card"><strong>${completionPercent}%</strong><span>profile complete</span><div class="completion-track"><span style="width:${completionPercent}%"></span></div></div></section><div class="profile-stat-grid"><div><span>Current GPA</span><strong>${currentEducation?.gpa ?? "Not set"}</strong></div><div><span>Study year</span><strong>${currentEducation?.study_year ?? "Not set"}</strong></div><div><span>Skills</span><strong>${d.skills.length}</strong></div><div><span>Projects</span><strong>${d.projects.length}</strong></div></div><section class="profile-workspace"><div class="profile-tabs" role="tablist" aria-label="Profile sections">${tabs.map(([id, label]) => `<button type="button" role="tab" class="profile-tab ${active === id ? "active" : ""}" aria-selected="${active === id}" aria-controls="profile-panel" data-profile-tab="${id}">${label}</button>`).join("")}</div><div id="profile-panel" role="tabpanel" tabindex="-1">${profileSection(active, d)}</div></section>`;
+    $('#page-content').classList.add('cv-edit-mode');
+    $('#page-content').insertAdjacentHTML('afterbegin', '<section class=cv-editor-heading><div><p class=eyebrow>Build your profile</p><h2>Edit your CV</h2><p>Update a section and see the preview change alongside the form.</p></div><button type=button class=secondary-button id=view-cv>View CV</button></section>');
+    const workspace = document.querySelector('.profile-workspace');
+    workspace.classList.add('cv-editor-layout');
+    workspace.insertAdjacentHTML('beforeend', '<aside class=cv-live-panel><div id=cv-live-preview class=cv-preview-direct>' + cvMarkup(d, state.cvDraft || {}) + '</div></aside>');
+    $('#view-cv').onclick = () => { state.profileMode = 'preview'; state.cvDraft = null; renderProfile(); };
     document.querySelectorAll("[data-profile-tab]").forEach(
       (button) =>
         (button.onclick = () => {
@@ -567,7 +710,18 @@ async function studentProfile() {
           e.preventDefault();
           await saveForm(url, method, e.currentTarget);
         };
+      if (form) {
+        const refresh = () => { const preview = $('#cv-live-preview'); if (preview) preview.innerHTML = cvMarkup(d, cvDraftFromForm(d, active, form)); };
+        form.addEventListener('input', refresh);
+        form.addEventListener('change', refresh);
+      }
     });
+    const joinProjectForm = $('#project-join-form');
+    if (joinProjectForm) {
+      const refresh = () => { const preview = $('#cv-live-preview'); if (preview) preview.innerHTML = cvMarkup(d, cvDraftFromForm(d, active, joinProjectForm)); };
+      joinProjectForm.addEventListener('input', refresh);
+      joinProjectForm.addEventListener('change', refresh);
+    }
     document.querySelectorAll(".remove-profile-item").forEach(
       (button) =>
         (button.onclick = async () => {
@@ -633,7 +787,6 @@ async function renderPage() {
 }
 async function bootApp() {
   renderShell();
-  $("#connection-badge").textContent = "Local database connected";
   await renderPage();
 }
 async function init() {

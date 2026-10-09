@@ -26,7 +26,10 @@ In MySQL Workbench, run these files in order:
 
 1. `database/01_create_schema.sql`
 2. `database/02_sample_data.sql` (run once on an empty schema)
-3. `database/03_business_queries.sql` (reports; safe to rerun)
+3. `database/migrations/08_seed_demo_opportunities.sql` (adds demo listings for 8 more companies; safe to rerun)
+4. `database/03_business_queries.sql` (reports; safe to rerun)
+
+The demo opportunity seed brings the sample catalog to 10 companies and 20 internships. New demo company accounts use the `company123` password.
 
 ## Application setup
 
