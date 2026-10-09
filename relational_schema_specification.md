@@ -120,7 +120,7 @@ The `is_mandatory` field applies only to skills.
 
 Composite primary key: (`student_id`, `education_id`)
 
-The current education record supplies the GPA and study year used for matching. The SQL queries use `is_current = TRUE` to select it. A generated helper key and unique constraint enforce at most one current record per student; the application also clears the previous current flag before selecting a new one.
+The current education record supplies the GPA and study year used for matching. The SQL queries use `is_current = TRUE` to select it. The application transaction clears the previous current flag before selecting a new one, so the normal application workflow maintains at most one current record per student.
 
 ### student_projects
 

@@ -5,7 +5,7 @@ This is the full live-demo application for the SmartIntern database project. It 
 ## Setup
 
 1. Make sure the `smartintern_db` database has been created and populated using `01_create_schema.sql` and `02_sample_data.sql` in `sql/`.
-2. If the database was created before the latest schema changes, use the optional scripts in `sql/migrations/`: `04_update_demo_passwords.sql`, `05_update_experience_structure.sql`, `06_update_project_codes.sql`, `07_add_catalog_uniqueness.sql`, and `08_enforce_one_current_education.sql`. Run only migrations that have not already been applied. Check for duplicate current records before running migration 08.
+2. If the database was created before the latest schema changes, use the optional scripts in `sql/migrations/`: `04_update_demo_passwords.sql`, `05_update_experience_structure.sql`, `06_update_project_codes.sql`, and `07_add_catalog_uniqueness.sql`. Run only migrations that have not already been applied.
 3. Copy `.env.example` to `.env`.
 4. Put the MySQL root password in `.env` as `DB_PASSWORD`. Do not commit `.env`.
 5. Install dependencies:

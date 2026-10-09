@@ -36,7 +36,7 @@ This document records the decisions made after the proposal review.
 
 ## Data integrity rules
 
-- A student can have multiple education records, but at most one can be current.
+- A student can have multiple education records, but the application workflow maintains at most one current record.
 - A student can submit only one application for each internship.
 - The database enforces the application rule with `UNIQUE (student_id, internship_id)`.
 
