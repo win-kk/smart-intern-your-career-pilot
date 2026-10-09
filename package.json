@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "description": "SmartIntern database project demonstration application",
-  "main": "server.js",
+  "main": "backend/server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

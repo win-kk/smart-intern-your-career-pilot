@@ -1,55 +1,43 @@
-# SmartIntern Demo Application
+# SmartIntern Database Matching Demo
 
-This is the full live-demo application for the SmartIntern database project. It uses Node.js, Express, vanilla HTML/CSS/JavaScript, and the local MySQL database.
+SmartIntern is a local internship matching demo built with MySQL, Node.js, Express, and vanilla HTML/CSS/JavaScript.
 
-## Setup
-
-1. Make sure the `smartintern_db` database has been created and populated using `01_create_schema.sql` and `02_sample_data.sql` in `sql/`.
-2. If the database was created before the latest schema changes, use the optional scripts in `sql/migrations/`: `04_update_demo_passwords.sql`, `05_update_experience_structure.sql`, `06_update_project_codes.sql`, and `07_add_catalog_uniqueness.sql`. Run only migrations that have not already been applied.
-3. Copy `.env.example` to `.env`.
-4. Put the MySQL root password in `.env` as `DB_PASSWORD`. Do not commit `.env`.
-5. Install dependencies:
+## Project structure
 
 ```text
-npm install
+frontend/                 View: HTML, styles, and browser-side JavaScript
+backend/
+  config/                 Environment configuration
+  controllers/            Request handling and application logic
+  middleware/             Authentication and role checks
+  models/                 MySQL connection and reusable data queries
+  routes/                 API endpoint-to-controller mapping
+  utils/                  Input validation helpers
+  app.js                  Express configuration
+  server.js               Application entry point
+database/                 Schema, sample data, and report queries
 ```
 
-If npm is unavailable, use the installed pnpm command instead:
+The backend follows MVC: the frontend is the View, controllers handle requests, and models provide database access. Routes map HTTP endpoints to controller functions.
 
-```text
-pnpm install
-```
+## Database setup
 
-## Run
+In MySQL Workbench, run these files in order:
 
-```text
-npm start
-```
+1. `database/01_create_schema.sql`
+2. `database/02_sample_data.sql` (run once on an empty schema)
+3. `database/03_business_queries.sql` (reports; safe to rerun)
 
-Then open [http://localhost:3000](http://localhost:3000).
+## Application setup
 
-## Local demo credentials
+1. Copy `.env.example` to `.env` in the project root.
+2. Set the MySQL connection values in `.env`. For the app, use a dedicated MySQL user with access to `smartintern_db`.
+3. Install dependencies with `npm install`.
+4. Start the app with `npm start` and open [http://localhost:3000](http://localhost:3000).
 
-These credentials are for the local presentation database only:
+## Demo credentials
 
-- Student accounts: `student123`
-- Company accounts: `company123`
+- Student accounts use the password `student123`.
+- Company accounts use the password `company123`.
 
-## Demo features
-
-- Student view with current education and internship match scores.
-- Missing mandatory-skill display.
-- Student application submission.
-- Company view with internship application counts.
-- Company review of applicants and application-status updates.
-
-## API routes
-
-- `GET /api/health`
-- `GET /api/students`
-- `GET /api/companies`
-- `GET /api/students/:studentId/matches`
-- `GET /api/companies/:companyId/internships`
-- `GET /api/internships/:internshipId/applications`
-- `POST /api/applications`
-- `PATCH /api/applications/:applicationId/status`
+The sample database uses fabricated records for local demonstration.
