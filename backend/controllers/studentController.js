@@ -1,6 +1,7 @@
+const { logError } = require('../utils/logger');
 const pool = require('../models/database');
 const bcrypt = require('bcryptjs');
-const { idParam, requiredText, optionalText, numberValue } = require('../utils/validation');
+const { idParam, requiredText, optionalText, numberValue, integerValue, booleanValue, dateValue } = require('../utils/validation');
 const { getStudentMatches: loadStudentMatches } = require('../models/matchingModel');
 const { getProfileId } = require('../models/userModel');
 const allowedStatuses = ['Pending', 'Under Review', 'Accepted', 'Rejected'];
@@ -75,12 +76,12 @@ const postStudentApplications = async (req, res, next) => {
   try {
     const internshipId = idParam(req.body.internshipId, 'internshipId');
     const matches = await loadStudentMatches(req.session.user.profileId);
-    const match = matches.find((row) => row.internship_id === internshipId);
+    const match = matches.find((row) => Number(row.internship_id) === internshipId);
     if (!match) return res.status(404).json({ error: 'Internship match not found' });
     const [result] = await pool.query(`
       INSERT INTO applications (student_id, internship_id, application_date, status, match_score)
       VALUES (?, ?, CURDATE(), 'Pending', ?)
-    `, [req.session.user.profileId, internshipId, Number(match.match_score)]);
+    `, [req.session.user.profileId, internshipId, numberValue(match.match_score, 'Match score', 0, 100)]);
     res.status(201).json({ applicationId: result.insertId, matchScore: match.match_score });
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'You already applied to this internship' });
@@ -89,15 +90,16 @@ const postStudentApplications = async (req, res, next) => {
 };
 
 const postStudentSkills = async (req, res, next) => {
-  const connection = await pool.getConnection();
+  let connection;
   try {
     const skillId = req.body.skillId ? idParam(req.body.skillId, 'skillId') : null;
-    const skillName = optionalText(req.body.skillName);
-    const category = optionalText(req.body.category);
-    const proficiency = numberValue(req.body.proficiencyLevel, 'Proficiency level', 1, 5);
+    const skillName = optionalText(req.body.skillName, 100);
+    const category = optionalText(req.body.category, 100);
+    const proficiency = integerValue(req.body.proficiencyLevel, 'Proficiency level', 1, 5);
     const years = numberValue(req.body.yearsExperience, 'Years of experience', 0, 99);
-    const lastUsedYear = req.body.lastUsedYear ? Number(req.body.lastUsedYear) : null;
+    const lastUsedYear = req.body.lastUsedYear ? integerValue(req.body.lastUsedYear, 'Last used year', 1901, 2155) : null;
     if (!skillId && !skillName) return res.status(400).json({ error: 'Enter a skill name' });
+    connection = await pool.getConnection();
     await connection.beginTransaction();
     let resolvedSkillId = skillId;
     if (!resolvedSkillId) {
@@ -112,7 +114,10 @@ const postStudentSkills = async (req, res, next) => {
     `, [req.session.user.profileId, resolvedSkillId, proficiency, years, lastUsedYear]);
     await connection.commit();
     res.status(201).json({ ok: true });
-  } catch (error) { await connection.rollback(); next(error); } finally { connection.release(); }
+  } catch (error) {
+    if (connection) { try { await connection.rollback(); } catch (rollbackError) { logError('transaction_rollback_failed', rollbackError); } }
+    next(error);
+  } finally { connection?.release(); }
 };
 
 const deleteStudentSkillsSkillId = async (req, res, next) => {
@@ -123,31 +128,35 @@ const deleteStudentSkillsSkillId = async (req, res, next) => {
 };
 
 const postStudentEducation = async (req, res, next) => {
-  const connection = await pool.getConnection();
+  let connection;
   try {
     const educationId = req.body.educationId ? idParam(req.body.educationId, 'educationId') : null;
-    const institution = optionalText(req.body.institution);
-    const degree = optionalText(req.body.degree);
+    const institution = optionalText(req.body.institution, 255);
+    const degree = optionalText(req.body.degree, 255);
     const gpa = numberValue(req.body.gpa, 'GPA', 0, 4);
-    const studyYear = numberValue(req.body.studyYear, 'Study year', 1, 10);
-    const graduationYear = req.body.graduationYear ? Number(req.body.graduationYear) : null;
+    const studyYear = integerValue(req.body.studyYear, 'Study year', 1, 10);
+    const graduationYear = req.body.graduationYear ? integerValue(req.body.graduationYear, 'Graduation year', 1901, 2155) : null;
     if (!educationId && (!institution || !degree)) return res.status(400).json({ error: 'Select an education record or enter an institution and degree' });
+    connection = await pool.getConnection();
     await connection.beginTransaction();
     let resolvedEducationId = educationId;
     if (!resolvedEducationId) {
       const [education] = await connection.query('INSERT INTO education (institution, degree) VALUES (?, ?) ON DUPLICATE KEY UPDATE education_id = LAST_INSERT_ID(education_id)', [institution, degree]);
       resolvedEducationId = education.insertId;
     }
-    if (req.body.isCurrent) await connection.query('UPDATE student_education SET is_current = FALSE WHERE student_id = ?', [req.session.user.profileId]);
+    if (booleanValue(req.body.isCurrent, 'Is current')) await connection.query('UPDATE student_education SET is_current = FALSE WHERE student_id = ?', [req.session.user.profileId]);
     await connection.query(`
       INSERT INTO student_education (student_id, education_id, gpa, study_year, graduation_year, is_current)
       VALUES (?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE gpa = VALUES(gpa), study_year = VALUES(study_year),
         graduation_year = VALUES(graduation_year), is_current = VALUES(is_current)
-    `, [req.session.user.profileId, resolvedEducationId, gpa, studyYear, graduationYear, Boolean(req.body.isCurrent)]);
+    `, [req.session.user.profileId, resolvedEducationId, gpa, studyYear, graduationYear, booleanValue(req.body.isCurrent, 'Is current')]);
     await connection.commit();
     res.status(201).json({ ok: true });
-  } catch (error) { await connection.rollback(); next(error); } finally { connection.release(); }
+  } catch (error) {
+    if (connection) { try { await connection.rollback(); } catch (rollbackError) { logError('transaction_rollback_failed', rollbackError); } }
+    next(error);
+  } finally { connection?.release(); }
 };
 
 const deleteStudentEducationEducationId = async (req, res, next) => {
@@ -158,10 +167,11 @@ const deleteStudentEducationEducationId = async (req, res, next) => {
 };
 
 const postStudentProjects = async (req, res, next) => {
-  const connection = await pool.getConnection();
+  let connection;
   try {
     const projectName = requiredText(req.body.projectName, 'Project name');
     const projectRole = requiredText(req.body.projectRole, 'Project role');
+    connection = await pool.getConnection();
     await connection.beginTransaction();
     const [project] = await connection.query('INSERT INTO projects (project_code, project_name, description, technologies) VALUES (?, ?, ?, ?)', ['PENDING', projectName, optionalText(req.body.description), optionalText(req.body.technologies)]);
     const projectCode = `PRJ-${String(project.insertId).padStart(4, '0')}`;
@@ -169,7 +179,10 @@ const postStudentProjects = async (req, res, next) => {
     await connection.query('INSERT INTO student_projects (student_id, project_id, project_role) VALUES (?, ?, ?)', [req.session.user.profileId, project.insertId, projectRole]);
     await connection.commit();
     res.status(201).json({ projectId: project.insertId, projectCode });
-  } catch (error) { await connection.rollback(); next(error); } finally { connection.release(); }
+  } catch (error) {
+    if (connection) { try { await connection.rollback(); } catch (rollbackError) { logError('transaction_rollback_failed', rollbackError); } }
+    next(error);
+  } finally { connection?.release(); }
 };
 
 const postStudentProjectsJoin = async (req, res, next) => {
@@ -196,9 +209,9 @@ const deleteStudentProjectsProjectId = async (req, res, next) => {
 const postStudentCertifications = async (req, res, next) => {
   try {
     const certificationId = req.body.certificationId ? idParam(req.body.certificationId, 'certificationId') : null;
-    const certificationName = optionalText(req.body.certificationName);
-    const issuer = optionalText(req.body.issuer);
-    const issueDate = requiredText(req.body.issueDate, 'Issue date');
+    const certificationName = optionalText(req.body.certificationName, 255);
+    const issuer = optionalText(req.body.issuer, 255);
+    const issueDate = dateValue(req.body.issueDate, 'Issue date');
     if (!certificationId && (!certificationName || !issuer)) return res.status(400).json({ error: 'Select a certification or enter its name and issuer' });
     let resolvedCertificationId = certificationId;
     if (!resolvedCertificationId) {
@@ -222,14 +235,15 @@ const deleteStudentCertificationsCertificationId = async (req, res, next) => {
 };
 
 const postStudentExperience = async (req, res, next) => {
-  const connection = await pool.getConnection();
+  let connection;
   try {
     const experienceId = req.body.experienceId ? idParam(req.body.experienceId, 'experienceId') : null;
-    const organization = optionalText(req.body.organization);
+    const organization = optionalText(req.body.organization, 255);
     const positionTitle = requiredText(req.body.positionTitle, 'Position title');
     const role = requiredText(req.body.role, 'Role');
-    const durationMonths = numberValue(req.body.durationMonths, 'Duration', 0, 600);
+    const durationMonths = integerValue(req.body.durationMonths, 'Duration', 0, 600);
     if (!experienceId && !organization) return res.status(400).json({ error: 'Select an organization' });
+    connection = await pool.getConnection();
     await connection.beginTransaction();
     let resolvedExperienceId = experienceId;
     if (!resolvedExperienceId) {
@@ -238,8 +252,11 @@ const postStudentExperience = async (req, res, next) => {
     }
     await connection.query('INSERT INTO student_experience (student_id, experience_id, position_title, role, duration_months) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE position_title = VALUES(position_title), role = VALUES(role), duration_months = VALUES(duration_months)', [req.session.user.profileId, resolvedExperienceId, positionTitle, role, durationMonths]);
     await connection.commit();
-    res.status(201).json({ experienceId: experience.insertId });
-  } catch (error) { await connection.rollback(); next(error); } finally { connection.release(); }
+    res.status(201).json({ experienceId: resolvedExperienceId });
+  } catch (error) {
+    if (connection) { try { await connection.rollback(); } catch (rollbackError) { logError('transaction_rollback_failed', rollbackError); } }
+    next(error);
+  } finally { connection?.release(); }
 };
 
 const deleteStudentExperienceExperienceId = async (req, res, next) => {

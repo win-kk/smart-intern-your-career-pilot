@@ -9,7 +9,7 @@ const companyController = require('../controllers/companyController');
 
 router.get('/api/health', systemController.getHealth);
 router.post('/api/auth/login', authController.postAuthLogin);
-router.get('/api/auth/me', authController.getAuthMe);
+router.get('/api/auth/me', auth.requireAuth, authController.getAuthMe);
 router.post('/api/auth/logout', authController.postAuthLogout);
 router.get('/api/catalog/skills', auth.requireAuth, catalogController.getCatalogSkills);
 router.get('/api/catalog/education', auth.studentOnly, catalogController.getCatalogEducation);
@@ -41,6 +41,7 @@ router.post('/api/company/internships/:internshipId/skills', auth.companyOnly, c
 router.delete('/api/company/internships/:internshipId/skills/:skillId', auth.companyOnly, companyController.deleteCompanyInternshipsInternshipIdSkillsSkillId);
 router.get('/api/company/internships/:internshipId/applications', auth.companyOnly, companyController.getCompanyInternshipsInternshipIdApplications);
 router.patch('/api/company/applications/:applicationId/status', auth.companyOnly, companyController.patchCompanyApplicationsApplicationIdStatus);
+router.get('/api/company/internships/:internshipId/skills-report', auth.companyOnly, companyController.getCompanyInternshipSkillsReport);
 router.get('/api/company/reports', auth.companyOnly, companyController.getCompanyReports);
 
 module.exports = router;

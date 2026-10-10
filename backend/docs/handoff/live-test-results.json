@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-10",
+  "results": [
+    {
+      "name": "Browser application stored in MySQL",
+      "status": "passed",
+      "details": {
+        "application_id": 6,
+        "status": "Accepted",
+        "match_score": "93.00"
+      }
+    },
+    {
+      "name": "Student profile update and restoration",
+      "status": "passed"
+    },
+    {
+      "name": "Company profile update and restoration",
+      "status": "passed"
+    },
+    {
+      "name": "Skill create/read/update/delete persisted",
+      "status": "passed"
+    },
+    {
+      "name": "Internship and requirement CRUD; foreign company denied",
+      "status": "passed"
+    },
+    {
+      "name": "Pending → Under Review → Rejected; student and MySQL agree; duplicate and foreign company blocked",
+      "status": "passed"
+    },
+    {
+      "name": "Accepted visible in student API after browser review",
+      "status": "passed"
+    },
+    {
+      "name": "Applicant rankings equal live SQL order",
+      "status": "passed",
+      "details": [
+        {
+          "id": 6,
+          "score": "93.00",
+          "status": "Accepted"
+        },
+        {
+          "id": 7,
+          "score": "86.00",
+          "status": "Rejected"
+        }
+      ]
+    },
+    {
+      "name": "Report counts and top applicants agree with MySQL",
+      "status": "passed",
+      "details": {
+        "internships": 3,
+        "applications": 6,
+        "pending": "2",
+        "under_review": "1",
+        "accepted": "2",
+        "rejected": "1"
+      }
+    },
+    {
+      "name": "Missing skills and score independently checked for alice@example.com",
+      "status": "passed",
+      "details": {
+        "matches": 21
+      }
+    },
+    {
+      "name": "Missing skills and score independently checked for bob@example.com",
+      "status": "passed",
+      "details": {
+        "matches": 21
+      }
+    }
+  ],
+  "retained": {
+    "internshipId": 35,
+    "title": "QA Backend Workflow 2026-10-10",
+    "accepted": 6,
+    "rejected": 7
+  }
+}

@@ -1,0 +1,1120 @@
+{
+  "info": {
+    "_postman_id": "70140b3f-2d82-44d3-967a-8a34575ea770",
+    "name": "SmartIntern Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Local demo API handoff. Uses express-session cookies, not bearer JWT. Send requests selectively; this is an API reference, not a safe full-collection batch runner. CRUD requests change live data. Obtain IDs from catalog and list responses. Use QA records for DELETE. Never import .env or database credentials."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000",
+      "type": "string"
+    },
+    {
+      "key": "studentEmail",
+      "value": "alice@example.com",
+      "type": "string"
+    },
+    {
+      "key": "studentPassword",
+      "value": "student123",
+      "type": "string"
+    },
+    {
+      "key": "companyEmail",
+      "value": "recruiter@techbridge.example",
+      "type": "string"
+    },
+    {
+      "key": "companyPassword",
+      "value": "company123",
+      "type": "string"
+    },
+    {
+      "key": "internshipId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "applicationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "skillId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "educationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "projectCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "certificationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "experienceId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "GET /api/health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/health",
+            "description": "Role: Public. Expected success: 200. Session cookie authentication. {ok, database}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST /api/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Role: Public. Expected success: 200. Session cookie authentication. {userId, email, role, profileId}; session cookie is set",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\",\n  \"role\": \"Student\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Login Company",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Role: Public. Expected success: 200. Session cookie authentication. {userId, email, role, profileId}; session cookie is set",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{companyEmail}}\",\n  \"password\": \"{{companyPassword}}\",\n  \"role\": \"Company\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET /api/auth/me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "Role: Student or Company. Expected success: 200. Session cookie authentication. {userId, email, role, profileId}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST /api/auth/logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "description": "Role: Public. Expected success: 200. Session cookie authentication. {ok}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Catalog",
+      "item": [
+        {
+          "name": "GET /api/catalog/skills",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/catalog/skills",
+            "description": "Role: Student or Company. Expected success: 200. Session cookie authentication. Writes return {ok:true}; reads return database rows."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET /api/catalog/education",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/catalog/education",
+            "description": "Role: Student. Expected success: 200. Session cookie authentication. Writes return {ok:true}; reads return database rows."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET /api/catalog/certifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/catalog/certifications",
+            "description": "Role: Student. Expected success: 200. Session cookie authentication. Writes return {ok:true}; reads return database rows."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET /api/catalog/experience",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/catalog/experience",
+            "description": "Role: Student. Expected success: 200. Session cookie authentication. Writes return {ok:true}; reads return database rows."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Student",
+      "item": [
+        {
+          "name": "GET /api/student/profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/student/profile",
+            "description": "Role: Student. Expected success: 200. Session cookie authentication. GET: {profile, education[], skills[], projects[], certifications[], experience[]}; PUT: {first_name,last_name}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT /api/student/profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/student/profile",
+            "description": "Role: Student. Expected success: 200. Session cookie authentication. GET: {profile, education[], skills[], projects[], certifications[], experience[]}; PUT: {first_name,last_name}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Tan\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET /api/student/matches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/student/matches",
+            "description": "Role: Student. Expected success: 200. Session cookie authentication. Array of matches with internship_id, title, company_name, gpa, study_year, requirements, matched_skills, missing_skills, missing_mandatory_skills, match_score, qualification_status, applicant_count, has_applied, application_status"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET /api/student/applications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/student/applications",
+            "description": "Role: Student. Expected success: 200. Session cookie authentication. GET: application rows; POST: {applicationId, matchScore}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST /api/student/applications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/student/applications",
+            "description": "Role: Student. Expected success: 201. Session cookie authentication. GET: application rows; POST: {applicationId, matchScore}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"internshipId\": \"{{internshipId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST /api/student/skills",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/student/skills",
+            "description": "Role: Student. Expected success: 201. Session cookie authentication. Writes return {ok:true}; reads return database rows.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skillId\": \"{{skillId}}\",\n  \"proficiencyLevel\": 3,\n  \"yearsExperience\": 0,\n  \"lastUsedYear\": 2026\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE /api/student/skills/:skillId",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/student/skills/{{skillId}}",
+            "description": "Role: Student. Expected success: 200. Session cookie authentication. Writes return {ok:true}; reads return database rows."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST /api/student/education",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/student/education",
+            "description": "Role: Student. Expected success: 201. Session cookie authentication. Writes return {ok:true}; reads return database rows.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"educationId\": \"{{educationId}}\",\n  \"gpa\": 3.5,\n  \"studyYear\": 3,\n  \"graduationYear\": 2027,\n  \"isCurrent\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE /api/student/education/:educationId",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/student/education/{{educationId}}",
+            "description": "Role: Student. Expected success: 200. Session cookie authentication. Writes return {ok:true}; reads return database rows."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST /api/student/projects",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/student/projects",
+            "description": "Role: Student. Expected success: 201. Session cookie authentication. POST: {projectId,projectCode}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectName\": \"QA API Project\",\n  \"projectRole\": \"Developer\",\n  \"description\": \"Local demo project\",\n  \"technologies\": \"Node.js, SQL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST /api/student/projects/join",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/student/projects/join",
+            "description": "Role: Student. Expected success: 201. Session cookie authentication. POST: {projectId}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectCode\": \"{{projectCode}}\",\n  \"projectRole\": \"Developer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE /api/student/projects/:projectId",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/student/projects/{{projectId}}",
+            "description": "Role: Student. Expected success: 200. Session cookie authentication. Writes return {ok:true}; reads return database rows."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST /api/student/certifications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/student/certifications",
+            "description": "Role: Student. Expected success: 201. Session cookie authentication. Writes return {ok:true}; reads return database rows.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"certificationId\": \"{{certificationId}}\",\n  \"issueDate\": \"2026-10-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE /api/student/certifications/:certificationId",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/student/certifications/{{certificationId}}",
+            "description": "Role: Student. Expected success: 200. Session cookie authentication. Writes return {ok:true}; reads return database rows."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST /api/student/experience",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/student/experience",
+            "description": "Role: Student. Expected success: 201. Session cookie authentication. POST: {experienceId}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"experienceId\": \"{{experienceId}}\",\n  \"positionTitle\": \"Intern\",\n  \"role\": \"Developer\",\n  \"durationMonths\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE /api/student/experience/:experienceId",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/student/experience/{{experienceId}}",
+            "description": "Role: Student. Expected success: 200. Session cookie authentication. Writes return {ok:true}; reads return database rows."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Company",
+      "item": [
+        {
+          "name": "GET /api/company/profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/company/profile",
+            "description": "Role: Company. Expected success: 200. Session cookie authentication. GET: {company_id,company_name,description,email}; PUT: {ok}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT /api/company/profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/company/profile",
+            "description": "Role: Company. Expected success: 200. Session cookie authentication. GET: {company_id,company_name,description,email}; PUT: {ok}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyName\": \"TechBridge Solutions\",\n  \"description\": \"Software development and consulting company.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET /api/company/internships",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/company/internships",
+            "description": "Role: Company. Expected success: 200. Session cookie authentication. GET: internship rows with skills[] and application_count; POST: {internshipId}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST /api/company/internships",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/company/internships",
+            "description": "Role: Company. Expected success: 201. Session cookie authentication. GET: internship rows with skills[] and application_count; POST: {internshipId}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"QA API Internship\",\n  \"minGpa\": 3,\n  \"minStudyYear\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PUT /api/company/internships/:internshipId",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/company/internships/{{internshipId}}",
+            "description": "Role: Company. Expected success: 200. Session cookie authentication. Writes return {ok:true}; reads return database rows.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"QA API Internship Updated\",\n  \"minGpa\": 3,\n  \"minStudyYear\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE /api/company/internships/:internshipId",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/company/internships/{{internshipId}}",
+            "description": "Role: Company. Expected success: 200. Session cookie authentication. Writes return {ok:true}; reads return database rows."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST /api/company/internships/:internshipId/skills",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/company/internships/{{internshipId}}/skills",
+            "description": "Role: Company. Expected success: 201. Session cookie authentication. Writes return {ok:true}; reads return database rows.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skillId\": \"{{skillId}}\",\n  \"isMandatory\": true,\n  \"minimumProficiency\": 3,\n  \"requiredYears\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "DELETE /api/company/internships/:internshipId/skills/:skillId",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/company/internships/{{internshipId}}/skills/{{skillId}}",
+            "description": "Role: Company. Expected success: 200. Session cookie authentication. Writes return {ok:true}; reads return database rows."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET /api/company/internships/:internshipId/applications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/company/internships/{{internshipId}}/applications",
+            "description": "Role: Company. Expected success: 200. Session cookie authentication. Application rows with student names/email, match_score and status, ordered by score descending then application_date"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PATCH /api/company/applications/:applicationId/status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/company/applications/{{applicationId}}/status",
+            "description": "Role: Company. Expected success: 200. Session cookie authentication. Writes return {ok:true}; reads return database rows. Status rules: Pending -> Under Review -> Accepted/Rejected. Final decisions cannot reopen. Same-status retries return 200; invalid transitions or concurrent changes return 409.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Under Review\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET /api/company/reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/company/reports",
+            "description": "Role: Company. Expected success: 200. Session cookie authentication. {summary:{internships,applications,pending,under_review,accepted,rejected}, topApplicants:[{title,student_name,match_score,status}]}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code < 400) { const data = pm.response.json(); for (const key of ['internshipId','applicationId','projectId','projectCode','experienceId']) { if (data[key] !== undefined) pm.collectionVariables.set(key, data[key]); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Company internship skill-gap report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/company/internships/{{internshipId}}/skills-report",
+            "description": "Owning Company only. Returns applicant rows with current matchedSkills, missingSkills, missingMandatorySkills and requirement detail alongside saved match_score. Foreign or absent internship returns 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Report succeeds\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Applicant gaps are arrays\", () => { pm.response.json().forEach(row => { pm.expect(row.matchedSkills).to.be.an(\"array\"); pm.expect(row.missingSkills).to.be.an(\"array\"); pm.expect(row.requirements).to.be.an(\"array\"); }); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
