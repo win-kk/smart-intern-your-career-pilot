@@ -2,9 +2,9 @@ USE smartintern_db;
 
 -- Matching uses the single current education row; the schema enforces at most one.
 -- The three agreed business questions:
--- 1. Which students are the best qualified for each internship?
+-- 1. Who has the highest match score for a selected internship?
 -- 2. Which mandatory skills are missing for a selected student and internship?
--- 3. What is the match score for every student-internship pair?
+-- 3. What is the current status of a selected student's applications?
 
 -- Query 1: List all student profiles.
 SELECT s.student_id, s.first_name, s.last_name, u.email
@@ -50,180 +50,129 @@ JOIN internships AS i ON i.internship_id = a.internship_id
 GROUP BY i.internship_id, i.title, a.status
 ORDER BY i.internship_id, a.status;
 
--- Query 7: Show the highest-scoring applicants for every internship.
-WITH ranked_applications AS (
-    SELECT i.internship_id, i.title,
-           CONCAT(s.first_name, ' ', s.last_name) AS student_name,
-           a.match_score, a.status,
-           DENSE_RANK() OVER (
-               PARTITION BY i.internship_id ORDER BY a.match_score DESC
-           ) AS score_rank
-    FROM applications AS a
-    JOIN internships AS i ON i.internship_id = a.internship_id
-    JOIN students AS s ON s.student_id = a.student_id
-)
-SELECT internship_id, title, student_name, match_score, status
-FROM ranked_applications
-WHERE score_rank = 1
-ORDER BY internship_id;
+-- Query 7: Find the highest-scoring applicant for a selected internship.
+-- Change the internship_id value to test another internship.
+SELECT a.student_id,
+       CONCAT(s.first_name, ' ', s.last_name) AS student_name,
+       a.match_score,
+       a.status
+FROM applications AS a
+JOIN students AS s ON s.student_id = a.student_id
+WHERE a.internship_id = 1
+ORDER BY a.match_score DESC
+LIMIT 1;
 
 -- Query 8: Find missing mandatory skills for a selected student and internship.
--- Change the values in the parameters CTE to test another pair.
-WITH selected_pair AS (
-    SELECT 2 AS selected_student_id, 2 AS selected_internship_id
-)
+-- Change student_id and internship_id to test another pair.
 SELECT sk.skill_name, isk.minimum_proficiency, isk.required_years,
-       COALESCE(ss.proficiency_level, 0) AS student_proficiency,
-       COALESCE(ss.years_experience, 0) AS student_years_experience
-FROM selected_pair AS p
-JOIN internship_skills AS isk ON isk.internship_id = p.selected_internship_id
+       ss.proficiency_level AS student_proficiency,
+       ss.years_experience AS student_years_experience
+FROM internship_skills AS isk
 JOIN skills AS sk ON sk.skill_id = isk.skill_id
 LEFT JOIN student_skills AS ss
-  ON ss.skill_id = isk.skill_id AND ss.student_id = p.selected_student_id
-WHERE isk.is_mandatory = TRUE
-  AND (ss.skill_id IS NULL
+  ON ss.skill_id = isk.skill_id
+ AND ss.student_id = 2
+WHERE isk.internship_id = 2
+  AND isk.is_mandatory = TRUE
+  AND (ss.student_id IS NULL
        OR ss.proficiency_level < isk.minimum_proficiency
        OR ss.years_experience < isk.required_years);
 
--- Query 9: Calculate match scores for every student-internship pair.
-WITH current_education AS (
-    SELECT student_id, gpa, study_year
-    FROM student_education
-    WHERE is_current = TRUE
-), pair_scores AS (
-    SELECT
-        s.student_id,
-        i.internship_id,
-        COUNT(isk.skill_id) AS total_skills,
-        SUM(CASE
-            WHEN ss.skill_id IS NOT NULL
-             AND ss.proficiency_level >= isk.minimum_proficiency
-             AND ss.years_experience >= isk.required_years
-            THEN 1 ELSE 0 END) AS satisfied_skills,
-        SUM(CASE
-            WHEN isk.is_mandatory = TRUE
-             AND (ss.skill_id IS NULL
-                  OR ss.proficiency_level < isk.minimum_proficiency
-                  OR ss.years_experience < isk.required_years)
-            THEN 1 ELSE 0 END) AS failed_mandatory_skills,
-        ce.gpa,
-        ce.study_year,
-        i.min_gpa,
-        i.min_study_year
-    FROM students AS s
-    CROSS JOIN internships AS i
-    JOIN internship_skills AS isk ON isk.internship_id = i.internship_id
-    LEFT JOIN student_skills AS ss
-      ON ss.student_id = s.student_id AND ss.skill_id = isk.skill_id
-    JOIN current_education AS ce ON ce.student_id = s.student_id
-    GROUP BY s.student_id, i.internship_id, ce.gpa, ce.study_year,
-             i.min_gpa, i.min_study_year
-), scored_pairs AS (
-    SELECT *,
-           CASE
-               WHEN failed_mandatory_skills > 0 THEN 0
-               ELSE (satisfied_skills / total_skills) * 60
-           END AS skill_points,
-           CASE
-               WHEN gpa < min_gpa THEN 0
-               ELSE (gpa / 4.00) * 20
-           END AS gpa_points,
-           CASE
-               WHEN study_year < min_study_year THEN 0
-               ELSE (LEAST(study_year, 4) / 4.00) * 20
-           END AS study_year_points
-    FROM pair_scores
-)
-SELECT student_id, internship_id,
-       ROUND(skill_points, 2) AS skill_points,
-       ROUND(gpa_points, 2) AS gpa_points,
-       ROUND(study_year_points, 2) AS study_year_points,
-       ROUND(skill_points + gpa_points + study_year_points, 2) AS match_score,
-       CASE
-           WHEN failed_mandatory_skills = 0
-            AND gpa >= min_gpa
-            AND study_year >= min_study_year
-           THEN 'Qualified'
-           ELSE 'Not fully qualified'
-       END AS qualification_status
-FROM scored_pairs
-ORDER BY internship_id, match_score DESC;
 
--- Query 10: Show qualified students for each internship.
-WITH current_education AS (
-    SELECT
-        student_id,
-        gpa,
-        study_year
-    FROM student_education
-    WHERE is_current = TRUE
-), pair_scores AS (
-    SELECT
-        s.student_id,
-        i.internship_id,
-        i.title,
-        CONCAT(s.first_name, ' ', s.last_name) AS student_name,
-        ce.gpa,
-        ce.study_year,
-        i.min_gpa,
-        i.min_study_year,
-        COUNT(isk.skill_id) AS total_skills,
-        SUM(CASE
-            WHEN ss.skill_id IS NOT NULL
-             AND ss.proficiency_level >= isk.minimum_proficiency
-             AND ss.years_experience >= isk.required_years
-            THEN 1 ELSE 0 END) AS satisfied_skills,
-        SUM(CASE
-            WHEN isk.is_mandatory = TRUE
-             AND (ss.skill_id IS NULL
-                  OR ss.proficiency_level < isk.minimum_proficiency
-                  OR ss.years_experience < isk.required_years)
-            THEN 1 ELSE 0 END) AS failed_mandatory_skills
-    FROM students AS s
-    CROSS JOIN internships AS i
-    JOIN internship_skills AS isk
-        ON isk.internship_id = i.internship_id
-    LEFT JOIN student_skills AS ss
-        ON ss.student_id = s.student_id
-       AND ss.skill_id = isk.skill_id
-    JOIN current_education AS ce
-        ON ce.student_id = s.student_id
-    GROUP BY
-        s.student_id,
-        i.internship_id,
-        i.title,
-        s.first_name,
-        s.last_name,
-        ce.gpa,
-        ce.study_year,
-        i.min_gpa,
-        i.min_study_year
-), scored AS (
-    SELECT
-        *,
-        CASE
-            WHEN failed_mandatory_skills > 0 THEN 0
-            ELSE (satisfied_skills / total_skills) * 60
-        END
-        + CASE
-            WHEN gpa < min_gpa THEN 0
-            ELSE (gpa / 4.00) * 20
-        END
-        + CASE
-            WHEN study_year < min_study_year THEN 0
-            ELSE (LEAST(study_year, 4) / 4.00) * 20
-        END AS match_score
-    FROM pair_scores
-)
+-- Query 9: Calculate the match score for one selected student and internship.
+-- Matching formula for the selected student and internship:
+-- Skill points = satisfied skills / total skills * 60
+-- GPA points = GPA / 4 * 20
+-- Study-year points = minimum(study year, 4) / 4 * 20
+-- Match score = skill points + GPA points + study-year points
+-- A failed mandatory skill makes only the skill component zero.
+-- GPA and study-year components become zero when their minimum is not met.
+SET @student_id = 1;
+SET @internship_id = 1;
+
+-- Calculate the skill component of the match score.
 SELECT
-    internship_id,
-    title,
-    student_id,
-    student_name,
-    ROUND(match_score, 2) AS match_score
-FROM scored
-WHERE failed_mandatory_skills = 0
-  AND gpa >= min_gpa
-  AND study_year >= min_study_year
-ORDER BY internship_id, match_score DESC;
+    ROUND(
+        CASE
+            -- A failed mandatory skill makes the skill component zero.
+            WHEN SUM(
+                CASE
+                    WHEN isk.is_mandatory = TRUE
+                     AND (
+                          ss.skill_id IS NULL
+                          OR ss.proficiency_level < isk.minimum_proficiency
+                          OR ss.years_experience < isk.required_years
+                     )
+                    THEN 1
+                    ELSE 0
+                END
+            ) > 0
+            THEN 0
+            -- Otherwise, award points based on satisfied skill requirements.
+            ELSE
+                SUM(
+                    CASE
+                        WHEN ss.skill_id IS NOT NULL
+                         AND ss.proficiency_level >= isk.minimum_proficiency
+                         AND ss.years_experience >= isk.required_years
+                        THEN 1
+                        ELSE 0
+                    END
+                ) / COUNT(*) * 60
+        END,
+        2
+    ) AS skill_points,
+
+    -- Calculate the GPA component, worth up to 20 points.
+    ROUND(
+        CASE
+            WHEN se.gpa < i.min_gpa THEN 0
+            ELSE se.gpa / 4.00 * 20
+        END,
+        2
+    ) AS gpa_points,
+
+    -- Calculate the study-year component, worth up to 20 points.
+    ROUND(
+        CASE
+            WHEN se.study_year < i.min_study_year THEN 0
+            ELSE LEAST(se.study_year, 4) / 4.00 * 20
+        END,
+        2
+    ) AS study_year_points
+
+-- Get the selected internship's skill requirements.
+FROM internship_skills AS isk
+JOIN internships AS i
+  ON i.internship_id = isk.internship_id
+
+-- Use the selected student's current education record.
+JOIN student_education AS se
+  ON se.student_id = @student_id
+ AND se.is_current = TRUE
+
+-- Match the student's skills with the internship requirements.
+LEFT JOIN student_skills AS ss
+  ON ss.student_id = @student_id
+ AND ss.skill_id = isk.skill_id
+
+-- Limit the calculation to the selected internship.
+WHERE isk.internship_id = @internship_id
+
+-- Group the selected student's education values for the calculation.
+GROUP BY se.gpa, se.study_year, i.min_gpa, i.min_study_year;
+
+-- Query 10: Show the current application status for a selected student.
+-- Change the student_id value to test another student.
+SELECT a.application_id,
+       i.title,
+       c.company_name,
+       a.application_date,
+       a.status,
+       a.match_score
+FROM applications AS a
+JOIN internships AS i ON i.internship_id = a.internship_id
+JOIN companies AS c ON c.company_id = i.company_id
+WHERE a.student_id = 1
+ORDER BY a.application_date DESC;
 
