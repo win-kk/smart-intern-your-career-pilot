@@ -2652,3 +2652,55 @@ td {
   .cv-editor-panel,
   .cv-live-panel { padding: 13px; }
 }
+
+/* Compact mandatory skill requirement control. */
+.requirement-form label:has(input[name="isMandatory"]) {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-self: start;
+  min-height: 32px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.requirement-form label:has(input[name="isMandatory"]) > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.requirement-form input[name="isMandatory"] {
+  appearance: none;
+  position: relative;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  box-shadow: none;
+  cursor: pointer;
+}
+.requirement-form input[name="isMandatory"]:checked {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+.requirement-form input[name="isMandatory"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.requirement-form input[name="isMandatory"]:focus-visible {
+  outline: 3px solid var(--soft);
+  outline-offset: 3px;
+}
