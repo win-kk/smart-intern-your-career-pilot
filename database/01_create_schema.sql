@@ -1,3 +1,6 @@
+-- Final schema for MySQL 8.0.13+ (functional index enforces one current education row per student).
+-- Role/profile triggers enforce the disjoint subtype mapping; the application
+-- must create the matching profile as part of account creation.
 CREATE DATABASE IF NOT EXISTS smartintern_db;
 USE smartintern_db;
 
@@ -124,6 +127,7 @@ CREATE TABLE student_education (
     graduation_year YEAR,
     is_current BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY (student_id, education_id),
+    UNIQUE KEY uq_student_one_current_education ((CASE WHEN is_current = TRUE THEN student_id ELSE NULL END)),
     CONSTRAINT chk_student_education_gpa
         CHECK (gpa BETWEEN 0.00 AND 4.00),
     CONSTRAINT chk_student_education_study_year
@@ -194,3 +198,65 @@ CREATE TABLE applications (
         FOREIGN KEY (internship_id) REFERENCES internships(internship_id)
         ON DELETE RESTRICT ON UPDATE CASCADE
 );
+
+-- Enforce the disjoint User subtype mapping. Total participation is completed
+-- by the app creating the matching profile in the same account workflow.
+DELIMITER $$
+CREATE TRIGGER trg_applications_require_skill
+BEFORE INSERT ON applications
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM internship_skills
+        WHERE internship_id = NEW.internship_id
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Internship requires at least one skill before applications';
+    END IF;
+END$$
+CREATE TRIGGER trg_users_role_update
+BEFORE UPDATE ON users
+FOR EACH ROW
+BEGIN
+    IF NEW.role <> OLD.role
+       AND (EXISTS (SELECT 1 FROM students WHERE user_id = OLD.user_id)
+            OR EXISTS (SELECT 1 FROM companies WHERE user_id = OLD.user_id)) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Account role cannot change while a profile exists';
+    END IF;
+END$$
+CREATE TRIGGER trg_students_role_insert
+BEFORE INSERT ON students
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM users WHERE user_id = NEW.user_id AND role = 'Student') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Student profile requires a Student user account';
+    END IF;
+END$$
+CREATE TRIGGER trg_students_role_update
+BEFORE UPDATE ON students
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM users WHERE user_id = NEW.user_id AND role = 'Student') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Student profile requires a Student user account';
+    END IF;
+END$$
+CREATE TRIGGER trg_companies_role_insert
+BEFORE INSERT ON companies
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM users WHERE user_id = NEW.user_id AND role = 'Company') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Company profile requires a Company user account';
+    END IF;
+END$$
+CREATE TRIGGER trg_companies_role_update
+BEFORE UPDATE ON companies
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM users WHERE user_id = NEW.user_id AND role = 'Company') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Company profile requires a Company user account';
+    END IF;
+END$$
+DELIMITER ;
+
+

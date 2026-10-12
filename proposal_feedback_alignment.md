@@ -29,17 +29,21 @@ This document records the decisions made after the proposal review.
 - GPA contributes 20 points.
 - Study year contributes 20 points.
 - Skill points are `(satisfied skills / total required skills) * 60`.
+- Internships with no required skills are excluded from matching and cannot receive applications until a skill requirement is added.
 - If any mandatory skill fails, skill points become zero.
 - If GPA is below the internship minimum, GPA points become zero.
 - If study year is below the internship minimum, study-year points become zero.
+- When the GPA or study-year minimum is met, the component uses `GPA / 4.00 * 20` or `MIN(study_year, 4) / 4.00 * 20`, respectively.
 - The current education record supplies GPA and study year.
 
 ## Data integrity rules
 
 - A student can have multiple education records, but the application workflow maintains at most one current record.
+- MySQL's unique functional index prevents more than one current education record per student.
 - A student can submit only one application for each internship.
 - The database enforces the application rule with `UNIQUE (student_id, internship_id)`.
 
 ## ERD mapping note
 
 The ERD should show one-to-one relationships from User to Student and User to Company. In the relational implementation, each profile table has its own primary key and a unique foreign key to `users.user_id`.
+The specialization is disjoint and partial in the database: a profile can belong to only one matching role, while the schema permits a User row without a subtype profile. The supported role values are Student and Company; Admin and career-support accounts/workflows are out of scope. The seeded demo accounts each have a matching profile.

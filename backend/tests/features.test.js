@@ -59,12 +59,14 @@ test('transaction handlers forward acquisition failures and release after failed
 test('applications persist server score, handle duplicate and missing internship',async()=>{
  let stored;
  queryHandler=async(sql,args)=>{
+  if(sql.includes('SELECT internship_id FROM internships')) return [[{internship_id:7}]];
+  if(sql.includes('SELECT 1 FROM internship_skills')) return [[{skill_id:1}]];
   if(sql.startsWith('\nWITH')) return [[{internship_id:'7',match_score:'85.00'}]];
   stored=args;return [{insertId:9}];
  };
  const response=await invoke(student.postStudentApplications,{internshipId:7,matchScore:100,studentId:999});
  assert.equal(response.status,201);assert.deepEqual(stored,[11,7,85]);
- queryHandler=async sql=>sql.startsWith('\nWITH')?[[{internship_id:7,match_score:85}]]:Promise.reject(Object.assign(new Error('duplicate'),{code:'ER_DUP_ENTRY'}));
+ queryHandler=async sql=>sql.includes('SELECT internship_id FROM internships')?[[{internship_id:7}]]:sql.includes('SELECT 1 FROM internship_skills')?[[{skill_id:1}]]:sql.startsWith('\nWITH')?[[{internship_id:7,match_score:85}]]:Promise.reject(Object.assign(new Error('duplicate'),{code:'ER_DUP_ENTRY'}));
  assert.equal((await invoke(student.postStudentApplications,{internshipId:7})).status,409);
  queryHandler=async()=>[[]];
  assert.equal((await invoke(student.postStudentApplications,{internshipId:7})).status,404);
@@ -108,7 +110,7 @@ test('matching SQL handles normal, missing, mandatory and high study-year cases'
  db.exec('DELETE FROM student_skills WHERE skill_id=1');
  assert.equal((await run()).match_score,37.5);assert.equal((await run()).missing_mandatory_skills,'Java');
  db.exec('DELETE FROM student_education');assert.equal((await run()).match_score,0);assert.equal((await run()).qualification_status,'Not fully qualified');
- db.exec('DELETE FROM internship_skills');assert.equal((await run()).match_score,60);
+ db.exec('DELETE FROM internship_skills');assert.equal(await run(),undefined);
  db.close();
 });
 const app=require('../app');

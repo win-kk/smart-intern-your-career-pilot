@@ -75,6 +75,10 @@ const getStudentApplications = async (req, res, next) => {
 const postStudentApplications = async (req, res, next) => {
   try {
     const internshipId = idParam(req.body.internshipId, 'internshipId');
+    const [internshipRows] = await pool.query('SELECT internship_id FROM internships WHERE internship_id = ?', [internshipId]);
+    if (!internshipRows.length) return res.status(404).json({ error: 'Internship not found' });
+    const [requirementRows] = await pool.query('SELECT 1 FROM internship_skills WHERE internship_id = ? LIMIT 1', [internshipId]);
+    if (!requirementRows.length) return res.status(409).json({ error: 'This internship is not accepting applications until the company adds at least one skill requirement' });
     const matches = await loadStudentMatches(req.session.user.profileId);
     const match = matches.find((row) => Number(row.internship_id) === internshipId);
     if (!match) return res.status(404).json({ error: 'Internship match not found' });

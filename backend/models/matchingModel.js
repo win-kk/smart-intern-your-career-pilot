@@ -55,12 +55,15 @@ WITH current_education AS (
     ON ss.student_id = s.student_id AND ss.skill_id = isk.skill_id
   LEFT JOIN current_education AS ce ON ce.student_id = s.student_id
   WHERE s.student_id = ?
+    AND EXISTS (
+      SELECT 1 FROM internship_skills AS required_skill
+      WHERE required_skill.internship_id = i.internship_id
+    )
   GROUP BY s.student_id, i.internship_id, i.title, c.company_name,
            ce.gpa, ce.study_year, i.min_gpa, i.min_study_year
 ), scored AS (
   SELECT *,
     CASE WHEN failed_mandatory_skills > 0 THEN 0
-         WHEN total_skills = 0 THEN 60
          ELSE (satisfied_skills / total_skills) * 60 END
       + CASE WHEN gpa IS NULL OR gpa < min_gpa THEN 0
              ELSE (gpa / 4.00) * 20 END

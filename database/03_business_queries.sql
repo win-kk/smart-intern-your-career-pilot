@@ -1,5 +1,6 @@
 USE smartintern_db;
 
+-- Matching uses the single current education row; the schema enforces at most one.
 -- The three agreed business questions:
 -- 1. Which students are the best qualified for each internship?
 -- 2. Which mandatory skills are missing for a selected student and internship?
@@ -129,7 +130,7 @@ WITH current_education AS (
            END AS gpa_points,
            CASE
                WHEN study_year < min_study_year THEN 0
-               ELSE (study_year / 4.00) * 20
+               ELSE (LEAST(study_year, 4) / 4.00) * 20
            END AS study_year_points
     FROM pair_scores
 )
@@ -210,7 +211,7 @@ WITH current_education AS (
         END
         + CASE
             WHEN study_year < min_study_year THEN 0
-            ELSE (study_year / 4.00) * 20
+            ELSE (LEAST(study_year, 4) / 4.00) * 20
         END AS match_score
     FROM pair_scores
 )
@@ -225,3 +226,4 @@ WHERE failed_mandatory_skills = 0
   AND gpa >= min_gpa
   AND study_year >= min_study_year
 ORDER BY internship_id, match_score DESC;
+

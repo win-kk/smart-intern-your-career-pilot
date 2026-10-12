@@ -1,3 +1,5 @@
+-- Demo rows match each account role to one profile and provide one current
+-- education record for each student with education data.
 USE smartintern_db;
 
 INSERT INTO users (user_id, email, password_hash, role) VALUES
@@ -110,3 +112,4 @@ VALUES
 (3, 3, 1, '2026-09-22', 'Pending', 70.00),
 (4, 1, 2, '2026-09-23', 'Accepted', 93.00),
 (5, 3, 3, '2026-09-24', 'Under Review', 70.00);
+

@@ -22,7 +22,7 @@ IDs are positive safe integers. GPA: 0–4; study year: integer 1–10; proficie
 
 ## Matching and applications
 
-Skill points: 60 × satisfied requirements / total requirements, or zero if any mandatory requirement is unmet. No skill requirements gives 60 points. A satisfied skill meets both proficiency and required years. GPA points: zero below minimum or absent; otherwise GPA/4 × 20. Study-year points: zero below minimum or absent; otherwise min(year,4)/4 × 20. Qualification requires all mandatory skills and both minimums. Projects/certifications/experience do not add matching points. Scores should stay within 0–100.
+Skill points: 60 × satisfied requirements / total requirements, or zero if any mandatory requirement is unmet. Internships without skill requirements are excluded from matching and cannot accept applications until at least one requirement is added. A satisfied skill meets both proficiency and required years. GPA points: zero below minimum or absent; otherwise GPA/4 × 20. Study-year points: zero below minimum or absent; otherwise min(year,4)/4 × 20. Qualification requires all mandatory skills and both minimums. Projects/certifications/experience do not add matching points. Scores should stay within 0–100.
 
 Match rows include matched_skills, missing_skills and missing_mandatory_skills as comma-separated names or null. Applications store the server-computed match score at submission; changing a profile later recalculates discovery scores but does not rewrite existing application scores. Distinguish live match scores from stored applicant rankings.
 

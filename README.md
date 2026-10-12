@@ -24,12 +24,12 @@ The backend follows MVC: the frontend is the View, controllers handle requests, 
 
 In MySQL Workbench, run these files in order:
 
-1. `database/01_create_schema.sql`
+1. `database/01_create_schema.sql` (run once against a fresh database; requires MySQL 8.0.13 or later)
 2. `database/02_sample_data.sql` (run once on an empty schema)
-3. `database/migrations/08_seed_demo_opportunities.sql` (adds demo listings for 8 more companies; safe to rerun)
+3. `database/04_seed_demo_opportunities.sql` (optional; adds 8 companies and 17 internships; safe to rerun)
 4. `database/03_business_queries.sql` (reports; safe to rerun)
 
-The demo opportunity seed brings the sample catalog to 10 companies and 20 internships. New demo company accounts use the `company123` password.
+The demo opportunity seed brings the sample catalog to 10 companies and 20 internships. New demo company accounts use the `company123` password. The schema prevents applications to internships until at least one skill requirement exists; matching also hides internships until requirements are added.
 
 ## Application setup
 

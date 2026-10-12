@@ -120,7 +120,9 @@ The `is_mandatory` field applies only to skills.
 
 Composite primary key: (`student_id`, `education_id`)
 
-The current education record supplies the GPA and study year used for matching. The SQL queries use `is_current = TRUE` to select it. The application transaction clears the previous current flag before selecting a new one, so the normal application workflow maintains at most one current record per student.
+The current education record supplies the GPA and study year used for matching. The SQL queries use `is_current = TRUE` to select it. A unique functional index allows at most one current education record per student, and the application transaction clears the previous current flag before selecting a new one.
+
+The schema's `trg_applications_require_skill` trigger rejects an application unless the internship has at least one `internship_skills` row. The matching query also excludes internships without requirements, so they are not shown to students with a misleading score.
 
 ### student_projects
 
