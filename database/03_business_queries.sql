@@ -1,11 +1,5 @@
 USE smartintern_db;
 
--- Matching uses the single current education row; the schema enforces at most one.
--- The three agreed business questions:
--- 1. Who has the highest match score for a selected internship?
--- 2. Which mandatory skills are missing for a selected student and internship?
--- 3. What is the current status of a selected student's applications?
-
 -- Query 1: List all student profiles.
 SELECT s.student_id, s.first_name, s.last_name, u.email
 FROM students AS s
@@ -90,7 +84,6 @@ WHERE isk.internship_id = 2
 SET @student_id = 1;
 SET @internship_id = 1;
 
--- Calculate the skill component of the match score.
 SELECT
     ROUND(
         CASE
@@ -108,7 +101,7 @@ SELECT
                 END
             ) > 0
             THEN 0
-            -- Otherwise, award points based on satisfied skill requirements.
+            -- Otherwise, satisfied skill points up to 60 points
             ELSE
                 SUM(
                     CASE
