@@ -7,7 +7,7 @@ async function start() {
   const pool = require('./models/database');
   await app.locals.sessionRuntime.ready;
   await pool.query('SELECT 1');
-  const server = app.listen(config.port, () => console.log('SmartIntern listening on port ' + config.port));
+  const server = app.listen(config.port, () => console.log('SmartIntern listening on port http://localhost:' + config.port));
   server.on('error', error => { logError('server_listen_failed', error); process.exit(1); });
   let closing = false;
   async function shutdown() {

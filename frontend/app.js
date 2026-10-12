@@ -209,6 +209,7 @@ function renderShell() {
   $("#login-screen").classList.add("hidden");
   $("#app-shell").classList.remove("hidden");
   $("#app-shell").classList.toggle("student-workspace-shell", state.user.role === "Student");
+  $("#app-shell").classList.toggle("company-workspace-shell", state.user.role === "Company");
   $("#app-shell").classList.toggle(
     "student-discovery-shell",
     state.user.role === "Student" && state.page === "overview",
@@ -222,10 +223,15 @@ function renderShell() {
     )
     .join("");
   $("#student-nav-user").textContent = state.user.email;
+  $("#company-nav-user").textContent = state.user.email;
   $("#student-top-nav").innerHTML = navItems()
     .map(([id, label]) => `<button class="student-nav-button ${state.page === id ? "active" : ""}" data-page="${id}" aria-current="${state.page === id ? "page" : "false"}">${label}</button>`)
     .join("");
   $("#student-site-header").classList.toggle("hidden", state.user.role !== "Student");
+  $("#company-site-header").classList.toggle("hidden", state.user.role !== "Company");
+  $("#company-top-nav").innerHTML = navItems()
+    .map(([id, label]) => `<button class="student-nav-button ${state.page === id ? "active" : ""}" data-page="${id}" aria-current="${state.page === id ? "page" : "false"}">${label}</button>`)
+    .join("");
   document.querySelectorAll(".nav-button").forEach(
     (button) =>
       (button.onclick = () => {
@@ -253,6 +259,12 @@ function renderShell() {
     renderShell();
     renderPage();
   };
+  $(".company-site-brand").onclick = (event) => {
+    event.preventDefault();
+    state.page = "overview";
+    renderShell();
+    renderPage();
+  };
   const signOut = async (button) => {
     button.disabled = true;
     button.textContent = "Signing out...";
@@ -267,6 +279,7 @@ function renderShell() {
   };
   $("#logout-button").onclick = () => signOut($("#logout-button"));
   $("#student-signout").onclick = () => signOut($("#student-signout"));
+  $("#company-signout").onclick = () => signOut($("#company-signout"));
 }
 async function loadStudentData() {
   [
@@ -517,7 +530,7 @@ async function companyOverview() {
   const report = await api("/api/company/reports");
   pageHeader("Company workspace", "Overview");
   $("#page-content").innerHTML =
-    `<section class="welcome-banner"><div><p class="eyebrow">Recruitment workspace</p><h2>Review applicants with confidence.</h2><p>Manage requirements, compare transparent match scores, and move applications through your process.</p></div><button class="primary-button" id="go-internships">Manage internships</button></section><div class="stats-grid"><div class="stat-card"><div class="stat-label">Internships</div><div class="stat-value">${report.summary.internships || 0}</div></div><div class="stat-card"><div class="stat-label">Applications</div><div class="stat-value">${report.summary.applications || 0}</div></div><div class="stat-card"><div class="stat-label">Under review</div><div class="stat-value">${report.summary.under_review || 0}</div></div><div class="stat-card"><div class="stat-label">Accepted</div><div class="stat-value">${report.summary.accepted || 0}</div></div></div><div class="page-grid"><section class="panel-card"><div class="panel-heading"><div><h2>Top applicants</h2><p>Highest stored match scores across your internships.</p></div></div>${report.topApplicants.length ? `<div class="table-wrap"><table><thead><tr><th>Internship</th><th>Student</th><th>Score</th><th>Status</th></tr></thead><tbody>${report.topApplicants.map((a) => `<tr><td>${escapeHtml(a.title)}</td><td>${escapeHtml(a.student_name)}</td><td>${Number(a.match_score).toFixed(0)}</td><td>${escapeHtml(a.status)}</td></tr>`).join("")}</tbody></table></div>` : empty("No applications yet.")}</section></div>`;
+    `<section class="welcome-banner company-welcome-banner"><div><p class="eyebrow">Company workspace</p><h2>Review applicants with confidence.</h2><p>Manage requirements, compare transparent match scores, and move applications through your process.</p></div><button class="primary-button" id="go-internships">Manage internships</button></section><div class="stats-grid"><div class="stat-card"><div class="stat-label">Internships</div><div class="stat-value">${report.summary.internships || 0}</div></div><div class="stat-card"><div class="stat-label">Applications</div><div class="stat-value">${report.summary.applications || 0}</div></div><div class="stat-card"><div class="stat-label">Under review</div><div class="stat-value">${report.summary.under_review || 0}</div></div><div class="stat-card"><div class="stat-label">Accepted</div><div class="stat-value">${report.summary.accepted || 0}</div></div></div><div class="page-grid"><section class="panel-card"><div class="panel-heading"><div><h2>Top applicants</h2><p>Highest stored match scores across your internships.</p></div></div>${report.topApplicants.length ? `<div class="table-wrap"><table><thead><tr><th>Internship</th><th>Student</th><th>Score</th><th>Status</th></tr></thead><tbody>${report.topApplicants.map((a) => `<tr><td>${escapeHtml(a.title)}</td><td>${escapeHtml(a.student_name)}</td><td>${Number(a.match_score).toFixed(0)}</td><td>${escapeHtml(a.status)}</td></tr>`).join("")}</tbody></table></div>` : empty("No applications yet.")}</section></div>`;
   $("#go-internships").onclick = () => {
     state.page = "internships";
     renderShell();

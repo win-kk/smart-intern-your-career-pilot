@@ -2443,6 +2443,16 @@ td {
 .student-discovery-shell .discovery-hero h2 { font-size: clamp(1.5rem, 2.8vw, 2rem); }
 .student-workspace-shell .sidebar { display: none; }
 .student-workspace-shell .main-content { width: min(100%, 1540px); max-width: 1540px; padding: 18px clamp(14px, 3vw, 42px) 48px; }
+.company-workspace-shell .sidebar { display: none; }
+.company-workspace-shell .main-content { width: min(100%, 1540px); max-width: 1540px; padding: 18px clamp(14px, 3vw, 42px) 48px; }
+.company-workspace-shell .topbar { margin-top: 25px; margin-bottom: 24px; }
+.company-site-header { margin-bottom: 20px; }
+.company-welcome-banner { min-height: 160px; align-items: center; padding: 28px 32px; border: 0; color: #fff; background: radial-gradient(circle at 88% 18%, rgba(111,92,230,.34), transparent 27%), linear-gradient(118deg, #171823, #29263e 72%, #34304d); }
+.company-welcome-banner::after { border-color: rgba(255,255,255,.09); box-shadow: 0 0 0 28px rgba(255,255,255,.025), 0 0 0 58px rgba(255,255,255,.018); }
+.company-welcome-banner .eyebrow { color: #b8b0ff; }
+.company-welcome-banner h2 { margin-top: 7px; color: #fff; font-size: clamp(1.5rem, 2.7vw, 2rem); }
+.company-welcome-banner p:not(.eyebrow) { color: #d4d2df; font-size: .87rem; }
+.company-welcome-banner .primary-button { flex: 0 0 auto; }
 .student-site-header { display: grid; grid-template-columns: minmax(170px, 1fr) auto minmax(170px, 1fr); align-items: center; gap: 18px; min-height: 68px; padding: 10px 25px; border-radius: 18px; color: #fff; background: #151518; }
 .student-site-header.hidden { display: none; }
 .student-site-brand { display: inline-flex; align-items: center; gap: 10px; width: fit-content; color: #fff; text-decoration: none; }
@@ -2545,6 +2555,7 @@ td {
   .detail-role-list { position: static; max-height: 300px; overflow-y: auto; }
   .company-detail-side { grid-column: auto; }
   .role-detail-main { padding: 18px; }
+  .company-welcome-banner { align-items: start; flex-direction: column; padding: 23px; }
 }
 .student-discovery-shell .discovery-hero { padding-right: 32px; }
 .student-discovery-shell .discovery-search { width: 100%; max-width: none; margin-top: 18px; padding: 4px; gap: 6px; }
