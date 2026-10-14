@@ -6,9 +6,9 @@ This document records the database design agreed during project discussion. The 
 
 ## Business questions
 
-1. Which students are the best qualified for each internship?
+1. Who has the highest match score for a selected internship?
 2. Which mandatory skills are missing for a selected student and internship?
-3. What is the match score for every student-internship pair?
+3. What is the current application status for a selected student?
 
 ## Core tables
 
@@ -34,6 +34,8 @@ This document records the database design agreed during project discussion. The 
 - `description` - optional
 
 Each Student or Company profile belongs to exactly one User account. The unique `user_id` foreign key implements the one-to-one relationship. Student and Company each keep a separate primary key (`student_id` and `company_id`) because their profile records are separate entities in the relational schema. The User role determines which profile type the account uses.
+
+The specialization is disjoint and total. It is disjoint because one User account can have only one role. It is total because every User account must have exactly one corresponding Student or Company profile. The application creates the account and profile together during registration, while database triggers enforce role consistency.
 
 ### internships
 
@@ -180,14 +182,16 @@ Rules:
 - The final score is the sum of skill, GPA, and study-year points.
 - Skill points are calculated as `(satisfied skills / total required skills) * 60`, unless a mandatory skill fails, in which case skill points are zero.
 - GPA points are calculated as `(GPA / 4.00) * 20` when the minimum GPA is met; otherwise they are zero.
-- Study-year points are calculated as `(study year / 4.00) * 20` when the minimum study year is met; otherwise they are zero.
+- Study-year points are calculated as `(LEAST(study year, 4) / 4.00) * 20` when the minimum study year is met; otherwise they are zero.
 - SQL reports can label a result as `Qualified` or `Not fully qualified`; this label does not need to be stored as an additional column.
 
 ## Foreign-key deletion policy
 
-- Bridge-table records should use `ON DELETE CASCADE`.
-- Important parent records such as students, companies, internships, and skills should generally use `ON DELETE RESTRICT`.
-- This prevents important application and reporting data from being deleted accidentally.
+- Student and company profile records use restrictive deletion where they are referenced by important records.
+- Bridge records connected to student profiles use cascade deletion when appropriate.
+- The `student_skills` relationship uses `ON DELETE CASCADE` when its student or skill is deleted.
+- Internship skill requirements use restrictive deletion for the referenced skill catalog.
+- These choices prevent important application and reporting data from being deleted accidentally while allowing dependent bridge records to be cleaned up safely.
 
 ## Deliberately out of scope
 

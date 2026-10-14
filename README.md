@@ -18,7 +18,7 @@ backend/
 database/                 Schema, sample data, and report queries
 ```
 
-The backend follows MVC: the frontend is the View, controllers handle requests, and models provide database access. Routes map HTTP endpoints to controller functions.
+The backend uses a layered MVC-style structure: the frontend provides the View, routes map HTTP endpoints, controllers handle application logic, and models provide database access.
 
 ## Database setup
 
