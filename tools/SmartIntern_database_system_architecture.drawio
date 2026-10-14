@@ -1,0 +1,67 @@
+<mxfile host="app.diagrams.net" agent="Codex">
+  <diagram id="smartintern-architecture" name="SmartIntern Database System Architecture">
+    <mxGraphModel dx="1253" dy="530" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="user" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Helvetica;fontSize=15;spacing=10;labelBorderColor=none;textShadow=0;labelBackgroundColor=none;strokeWidth=2;" value="&lt;b&gt;STUDENT / COMPANY USER&lt;/b&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;Uses the browser interface&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="300" x="140" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="frontend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#000000;fontFamily=Helvetica;fontSize=15;spacing=10;labelBorderColor=none;textShadow=0;labelBackgroundColor=none;strokeWidth=2;" value="&lt;b&gt;FRONTEND&lt;/b&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;HTML, CSS, JavaScript&lt;br&gt;Login, profiles, internships, applications&lt;/div&gt;" vertex="1">
+          <mxGeometry height="100" width="300" x="580" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="backend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#000000;fontFamily=Helvetica;fontSize=15;spacing=10;labelBorderColor=none;textShadow=0;labelBackgroundColor=none;strokeWidth=2;" value="&lt;b&gt;BACKEND&lt;/b&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;Node.js + Express&lt;br&gt;Authentication, sessions, validation, CRUD and matching queries&lt;/div&gt;" vertex="1">
+          <mxGeometry height="110" width="300" x="1040" y="25" as="geometry" />
+        </mxCell>
+        <mxCell id="database" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#000000;fontFamily=Helvetica;fontSize=15;spacing=10;labelBorderColor=none;textShadow=0;labelBackgroundColor=none;strokeWidth=2;" value="&lt;b&gt;MYSQL COMMUNITY SERVER&lt;/b&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;Database engine for queries, transactions and connections&lt;/div&gt;" vertex="1">
+          <mxGeometry height="100" width="300" x="1040" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="workbench" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#000000;fontFamily=Helvetica;fontSize=15;spacing=10;labelBorderColor=none;textShadow=0;labelBackgroundColor=none;strokeWidth=2;" value="&lt;b&gt;MYSQL WORKBENCH&lt;/b&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;Schema design, SQL testing and database inspection&lt;/div&gt;" vertex="1">
+          <mxGeometry height="100" width="260" x="165" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="user-frontend" edge="1" parent="1" source="user" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontFamily=Helvetica;fontSize=15;labelBorderColor=none;textShadow=0;labelBackgroundColor=none;strokeWidth=2;" target="frontend" value="Uses browser">
+          <mxGeometry relative="1" y="-20" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="frontend-backend" edge="1" parent="1" source="frontend" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontFamily=Helvetica;fontSize=15;labelBorderColor=none;textShadow=0;labelBackgroundColor=none;strokeWidth=2;" target="backend" value="HTTP requests">
+          <mxGeometry relative="1" y="-20" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="backend-database" edge="1" parent="1" source="backend" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontFamily=Helvetica;fontSize=15;labelBorderColor=none;textShadow=0;labelBackgroundColor=none;strokeWidth=2;" target="database" value="mysql2 connection">
+          <mxGeometry relative="1" x="0.04" y="70" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="database-schema" edge="1" parent="1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontFamily=Helvetica;fontSize=15;labelBorderColor=none;textShadow=0;labelBackgroundColor=none;strokeWidth=2;" value="Uses schema">
+          <mxGeometry relative="1" y="20" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="1040" y="330" as="sourcePoint" />
+            <mxPoint x="800.0000000000002" y="330" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="workbench-database" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;strokeColor=#000000;fontFamily=Helvetica;fontSize=15;labelBorderColor=none;textShadow=0;labelBackgroundColor=none;strokeWidth=2;" value="Development and testing">
+          <mxGeometry relative="1" x="0.0526" y="10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="940" y="290" />
+              <mxPoint x="940" y="290" />
+            </Array>
+            <mxPoint x="800" y="290" as="sourcePoint" />
+            <mxPoint x="1040" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wFWCUmDnmW6OM52TuWcG-3" edge="1" parent="1" source="workbench" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;strokeColor=#000000;fontFamily=Helvetica;fontSize=15;labelBorderColor=none;textShadow=0;labelBackgroundColor=none;strokeWidth=2;" target="schema" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1220" y="550" as="sourcePoint" />
+            <mxPoint x="1650" y="130" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="schema" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#000000;fontFamily=Helvetica;fontSize=15;spacing=10;labelBorderColor=none;textShadow=0;labelBackgroundColor=none;strokeWidth=2;" value="&lt;b&gt;SMARTINTERN_DB SCHEMA&lt;/b&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;Tables, relationships, constraints and business data&lt;/div&gt;" vertex="1">
+          <mxGeometry height="100" width="300" x="500" y="260" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
